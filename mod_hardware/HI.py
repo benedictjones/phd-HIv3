@@ -57,22 +57,21 @@ class Dac_register(ctypes.Union):
 class hi:
 
     # ADC - variables
-    __adcrefvoltage = 5  # reference voltage for the ADC chip.
+    __adcrefvoltage = 5  # reference voltage for the ADC (& DAC) chip.
 
     # # ADC (MCP3204) - Define SPI bus and init
     # # Clock speed > 10kHz,
     # # f_clk = 20*f_sample
     # # t_sample ~ 1.5 clocks
     spiADC = spidev.SpiDev()
-    spiADC.open(0, 0)  # not using CE1!!!
-    spiADC.no_cs = True  # Set the "SPI_NO_CS" flag to disable use of the chip select
+    spiADC.open(0, 0)  # using CE0!!!
     # spiADC.speed = 900000
     spiADC.max_speed_hz = (2000000)  # 900000, 2000000
 
 
     # # DAC (MCP4822) - Define SPI bus and init
     spiDAC = spidev.SpiDev()
-    spiDAC.open(0, 1)  # not using CE0!!!
+    spiDAC.open(0, 1)  # not using CE1!!!
     spiDAC.no_cs = True  # Set the "SPI_NO_CS" flag to disable use of the chip select
     spiDAC.max_speed_hz = (4000000)
 
@@ -118,7 +117,7 @@ class hi:
         self.CE['DAC8'] = 19
 
         # # define ADC CE pins
-        self.CE['ADC1'] = 13
+        self.CE['ADC1'] = 'CE0'
 
         # # define MUX control pins
         self.MUX = {}
@@ -405,7 +404,6 @@ class hi:
         print("HI is now shut down via the R-Pi connection.")
 
         return
-#
 
 #
 

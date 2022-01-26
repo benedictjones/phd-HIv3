@@ -19,12 +19,12 @@ class mcp3204():
 
     def Read(self, chip, bus_data, channel=0, diff=0):
         """
-        Perform a single read after setting the chip select.
+        Perform a single read.
         """
 
         # Format data
         bus_data = self._FormatData_(channel, diff)
-        CE = self.CE[chip]
+        CE = self.CE[chip]   # CE use is depriciated now SPI CE (pin 24) in use
 
         # read data
         v_raw = self._read_(CE, bus_data)
@@ -36,7 +36,6 @@ class mcp3204():
     def Read_burst(self, chip, channel=0, n=1, diff=0, tref='na'):
         """
         Perform a burst (i.e., loop) of readings.
-        Note: the CE must be toggled for each read.
         """
 
         # # Create time list and ref
@@ -49,7 +48,7 @@ class mcp3204():
 
         # # create returnable list of readings
         v_raw_list = []
-        CE = self.CE[chip]
+        CE = self.CE[chip]  # CE use is depriciated now SPI CE (pin 24) is used
 
         # # read data in a loop
         # Include format data in the loop
@@ -67,11 +66,20 @@ class mcp3204():
     def _read_(self, CE, bus_data):
         """
         Perform a single read using the passed in Bus Data.
+
+        Note:
+            - The CE must be toggled for each read.
+            - Now this is done automatically via the SPI interface using SPI CE0 (GPIO 08)
+
         """
 
-        GPIO.output(CE, 0)  # Set CE low
+        if CE != 'CE0':
+            raise ValueError("SPI interface handles the ADC chip enable!")
+
+
+        #GPIO.output(CE, 0)  # Set CE low
         v_raw = self._read_raw_(bus_data)
-        GPIO.output(CE, 1)  # Set CE high
+        #GPIO.output(CE, 1)  # Set CE high
 
         return v_raw
 
@@ -99,15 +107,8 @@ class mcp3204():
         d[1] |= ((channel >> 0) & 0x01) << 6
         return d
 
-    #
+#
 
-    def mcp_set_pin(self, pin, level):
-        """
-        Set a GPIO logic levels for chip select.
-        """
+#
 
-        GPIO.output(pin, level)  # set port/pin value to 1/GPIO.HIGH/True
-
-        # time.sleep(0.000002)  # does this execute properly (i.e add delay after change?? test)
-
-        return
+# fin
