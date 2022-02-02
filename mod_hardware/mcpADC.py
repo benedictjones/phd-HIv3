@@ -17,14 +17,14 @@ class mcp3204():
 
     #
 
-    def Read(self, chip, bus_data, channel=0, diff=0):
+    def Read(self, bus_data, channel=0, diff=0):
         """
         Perform a single read.
         """
 
         # Format data
         bus_data = self._FormatData_(channel, diff)
-        CE = self.CE[chip]   # CE use is depriciated now SPI CE (pin 24) in use
+        #CE = self.CE[chip]   # CE use is depriciated now SPI CE (pin 24) in use
 
         # read data
         v_raw = self._read_(CE, bus_data)
@@ -33,7 +33,7 @@ class mcp3204():
 
     #
 
-    def Read_burst(self, chip, channel=0, n=1, diff=0, tref='na'):
+    def Read_burst(self, channel=0, n=1, diff=0, tref='na'):
         """
         Perform a burst (i.e., loop) of readings.
         """
@@ -48,14 +48,14 @@ class mcp3204():
 
         # # create returnable list of readings
         v_raw_list = []
-        CE = self.CE[chip]  # CE use is depriciated now SPI CE (pin 24) is used
+        #CE = self.CE[chip]  # CE use is depriciated now SPI CE (pin 24) is used
 
         # # read data in a loop
         # Include format data in the loop
         for i in range(n):
             #bus_data = self._FormatData_(channel, diff)  # must include in the loop
             cbus_data = copy.deepcopy(bus_data)
-            v_raw_list.append(self._read_(CE, cbus_data))  # copy.deepcopy(bus_data)
+            v_raw_list.append(self._read_(cbus_data))  # copy.deepcopy(bus_data)
             time_list.append(time.time()-tref)
             # time.sleep(0.0001)
 
@@ -63,7 +63,7 @@ class mcp3204():
 
     #
 
-    def _read_(self, CE, bus_data):
+    def _read_(self, bus_data, CE='CE0'):
         """
         Perform a single read using the passed in Bus Data.
 

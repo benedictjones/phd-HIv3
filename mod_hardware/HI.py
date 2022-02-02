@@ -117,7 +117,7 @@ class hi:
         self.CE['DAC8'] = 19
 
         # # define ADC CE pins
-        self.CE['ADC1'] = 'CE0'
+        # self.CE['ADC1'] = 'CE0'
 
         # # define MUX control pins
         self.MUX = {}
@@ -208,8 +208,7 @@ class hi:
         tic = time.time()
 
         # # Burst reading (only requires 1 CE toggle)
-        raw_list, t_list = self.mcp_adc.Read_burst(chip=chip, channel=channel,
-                                                   n=nAverage, diff=mode, tref=tic)
+        raw_list, t_list = self.mcp_adc.Read_burst(channel=channel, n=nAverage, diff=mode, tref=tic)
 
         # # Format Returned voltages
         for raw in raw_list:
@@ -227,7 +226,7 @@ class hi:
             fig_debug = plt.figure()
             sample_rate = len(raw_list)/t_list[-1]
             plt.plot(t_list, v_list)
-            plt.title('nAverage = %d, mean value = %.3f \n total run time = %f, sample rate ~ %f' % (nAverage, fMean, toc-tic, sample_rate))
+            plt.title('nAverage = %d, mean value = %.3f, std= %f \n total run time = %f, sample rate ~ %f' % (nAverage, fMean, fstd, toc-tic, sample_rate))
             if not os.path.exists('Results/Debug'):
                 os.makedirs('Results/Debug')
             fig_debug.savefig('Results/Debug/read_adc_Average.png', dpi=300)

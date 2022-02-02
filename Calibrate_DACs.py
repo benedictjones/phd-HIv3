@@ -70,7 +70,7 @@ with h5py.File(location, 'r+') as hdf:
     # ################################
     # Test All DAC outputs
     # ################################
-    pins = np.arange(1, 16)
+    pins = np.arange(1, 2)
     print("Pins to sweep over:", pins)
     OP = 4
 
@@ -95,7 +95,7 @@ with h5py.File(location, 'r+') as hdf:
         for v in Vin_sweep:
             v = np.round(v,4)
             obj.SetVoltage(electrode=pin, voltage=v)
-            Vop = obj.ReadVoltage(OP, debug=0)  # ch0, pin3, op1
+            Vop = obj.ReadVoltage(OP, debug=1)  # ch0, pin3, op1
             Vd = v - Vop
             Vdiff.append(Vd)
             Vouts.append(Vop)
@@ -164,7 +164,6 @@ Rshunt = obj.Rshunt
 # ################################
 # Test All DAC outputs
 # ################################
-pins = np.arange(1, 16)
 print("Pins to sweep over:", pins)
 OP = 4
 

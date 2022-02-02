@@ -39,10 +39,10 @@ os.makedirs(save_dir)
 # ################################
 
 
-interval = 0.01 # 0.05
+interval = 0.05 # 0.05
 x1_max = 3.5
 Vin = np.arange(-x1_max, x1_max+interval, interval)  # x1_max
-Vin = np.arange(0, 3+interval, interval)  # x1_max
+#Vin = np.arange(0, 3+interval, interval)  # x1_max
 
 
 Vin_sweep = np.concatenate((Vin, np.flip(Vin)))
@@ -85,7 +85,7 @@ for sweep in range(num_sweeps):
         #time.sleep(2)
         # op = obj.ReadVoltage(OP, debug=0)  # ch0, pin3, op1
 
-        Iop, Vop, Vadc = obj.ReadIV(OP, ret_type='both', nSamples=40)
+        Iop, Vop, Vadc = obj.ReadIV(OP, ret_type='both', nSamples=10)
 
         Vin.append(v)
         Vout.append(Vop)
@@ -106,9 +106,10 @@ for sweep in range(num_sweeps):
     sweep_dV.append(dV)
     sweep_Iout.append(Iout)
 
+t_read = time.time()-tref
 obj.fin()
-
-
+print("Time to do all readings = %f" % (t_read))
+print("Instance set/read rate = %f" % (num_sweeps*len(Vin_sweep)/t_read))
 
 # save data
 location = "%s/data.hdf5" % (save_dir)
@@ -122,19 +123,31 @@ with h5py.File(location, 'a') as hdf:
         G_subsub.create_dataset('dV', data=sweep_dV[s])
         G_subsub.create_dataset('Iout', data=sweep_Iout[s])
 
-
-
+#
 
 figI = plt.figure()
+R_slopes = []
 for s in range(num_sweeps):
-    plt.plot(sweep_dV[s], sweep_Iout[s], label=('sweep %d' % (s)))
+    
+    if Rshunt == 'none':
+        Rm = np.nan
+    else:
+        reg = linregress(x=sweep_dV[s], y=sweep_Iout[s])
+        Rm = 1/reg.slope
+        print("Sweep %d, Rmaterial ~ %.1f" % (s,Rm))
+        R_slopes.append(Rm)
+        
+    plt.plot(sweep_dV[s], sweep_Iout[s], label=('sweep %d, R=%.1f' % (s, Rm)))
+    
 plt.legend()
 plt.xlabel('dV')
 plt.ylabel('Iout')
-plt.title('Voltage drop against current')
+plt.title('Voltage drop against current\nMean R=%.2f' % (np.mean(R_slopes)))
 fig_path = "%s/FIG_Vd_Iout.png" % (save_dir)
 figI.savefig(fig_path, dpi=300)
 plt.close(figI)
+
+#
 
 figI = plt.figure()
 for s in range(num_sweeps):
@@ -147,6 +160,7 @@ fig_path = "%s/FIG_Vout_Iout.png" % (save_dir)
 figI.savefig(fig_path, dpi=300)
 plt.close(figI)
 
+#
 
 figV = plt.figure()
 for s in range(num_sweeps):
@@ -159,6 +173,7 @@ fig_path = "%s/FIG_Vout.png" % (save_dir)
 figV.savefig(fig_path, dpi=300)
 plt.close(figV)
 
+#
 
 figV2 = plt.figure()
 plt.plot(All_Vout)
@@ -169,24 +184,38 @@ fig_path = "%s/FIG_Vout_continuous.png" % (save_dir)
 figV2.savefig(fig_path, dpi=300)
 plt.close(figV2)
 
+#
 
 figV3 = plt.figure()
 plt.plot(time_list, All_Vout)
 plt.xlabel('Time')
 plt.ylabel('Vout')
 plt.title('Electrode voltage for a Triangle wave sweep')
-fig_path = "%s/FIG_Vout_vs_time.png" % (save_dir)
+fig_path = "%s/FIG_TRI_Vout_vs_time.png" % (save_dir)
 figV3.savefig(fig_path, dpi=300)
+plt.close(figV3)
+#
+
+figV4 = plt.figure()
+plt.plot(All_Vout)
+
+plt.xlabel('Instance')
+plt.ylabel('Vout')
+plt.title('Electrode voltage for a Triangle wave sweep\nInstance set/read rate = %f' % (num_sweeps*len(Vin_sweep)/t_read))
+fig_path = "%s/FIG_TRI_Vout.png" % (save_dir)
+figV4.savefig(fig_path, dpi=300)
+
+#
 
 figVadc = plt.figure()
 plt.plot(time_list, All_Vadc)
 plt.xlabel('Time')
 plt.ylabel('Vadc')
 plt.title('Vadc output for a Triangle wave sweep')
-fig_path = "%s/FIG_Vadc_vs_time.png" % (save_dir)
+fig_path = "%s/FIG_TRI_Vadc_vs_time.png" % (save_dir)
 figVadc.savefig(fig_path, dpi=300)
-
-
+plt.close(figVadc)
+#
 
 plt.show()
 plt.close('all')

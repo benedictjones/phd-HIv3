@@ -21,7 +21,7 @@ class si:
 
     # # Use offset which can be found by calibrating
     # # When Calibrating, perdorm Calibrate_DACs, then Calibrate_ADCs
-    input_v_offset = 1  # y = mx + c voltage offset at input electrodes (used when scaling)
+    input_v_offset = 0  # y = mx + c voltage offset at input electrodes (used when scaling)
     output_v_offset = 0  # y = mx + c voltage offset at output electrodes (used when scaling)
 
     # Set defualt of which DAC or ADC is associated to which electrode
@@ -267,12 +267,14 @@ class si:
             # # Read Voltage using a "burst and average read"
             adc_voltage, Vstd = self.hi.read_adc_Average(chip='ADC1',
                                                channel=the_channel,
-                                               nAverage=nSamples*attempt*5,
+                                               nAverage=nSamples*attempt,
                                                bDebug=0, bDebug_graph=debug)
 
             """
             # # Run check on coefficient of variation (CV)
             CV = Vstd/adc_voltage
+            print("\nVstd=%f, CV=%f" % (Vstd, CV))
+            print("Vbit = %f" % ( (4 * (5/2**12)) ) )
             if CV < 1:
                 success = success + 1
             else:
@@ -280,18 +282,21 @@ class si:
             #"""
 
             # # just break
-            break
+            #break
 
             # OR
 
+            #"""
             # # Run std vs quantisation noise check
             if Vstd <= (4 * (5/2**12)):
                 success = success + 1
             else:
                 print("\nAttempt %d Read voltage failed std quantisation noise check..." % (attempt))
-                print(" > std of ADC output = ", Vstd)
+                #print(" > std of ADC output = ", Vstd)
+            #"""
 
             if success >= 1:
+                #print(" > Pass! std of ADC output = ", Vstd)
                 break
             elif attempt >= attempts[-1]:
                 print("Warning: Read voltage failed its tests!")
