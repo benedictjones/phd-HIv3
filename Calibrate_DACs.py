@@ -3,6 +3,7 @@ import numpy as np
 import time
 import h5py
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 from scipy.stats import linregress
 from datetime import datetime
@@ -60,7 +61,6 @@ if not os.path.exists(save_dir):
 obj = si(Rshunt=14000, electrode3='in', electrode8='in', electrode11='in')  # , electrode3='in'
 Rshunt = obj.Rshunt
 
-
 # # Set the Calibration data to zero
 with h5py.File(location, 'r+') as hdf:
     InOffset_C_bias = hdf.get('/Input_Offset/Constant')
@@ -70,11 +70,11 @@ with h5py.File(location, 'r+') as hdf:
     # ################################
     # Test All DAC outputs
     # ################################
-    pins = np.arange(1, 2)
+    pins = np.arange(1, 16)
     print("Pins to sweep over:", pins)
     OP = 4
 
-    interval = 0.05  # 0.05
+    interval = 0.02  # 0.05
     x1_max = 9
     Vin_sweep = np.arange(-x1_max, x1_max+interval, interval)
 
@@ -92,10 +92,10 @@ with h5py.File(location, 'r+') as hdf:
 
         Vdiff = []
         Vouts = []
-        for v in Vin_sweep:
+        for v in tqdm(Vin_sweep):
             v = np.round(v,4)
             obj.SetVoltage(electrode=pin, voltage=v)
-            Vop = obj.ReadVoltage(OP, debug=1)  # ch0, pin3, op1
+            Vop = obj.ReadVoltage(OP, debug=0, nSamples=30)  # ch0, pin3, op1
             Vd = v - Vop
             Vdiff.append(Vd)
             Vouts.append(Vop)
@@ -158,8 +158,8 @@ print("Retesting with calibration...")
 
 
 # # Initiate SI and HI
-obj = si(Rshunt=14000, electrode3='in', electrode8='in', electrode11='in')  # , electrode3='in'
-Rshunt = obj.Rshunt
+obj2 = si(Rshunt=14000, electrode3='in', electrode8='in', electrode11='in')  # , electrode3='in'
+Rshunt = obj2.Rshunt
 
 # ################################
 # Test All DAC outputs
@@ -167,7 +167,7 @@ Rshunt = obj.Rshunt
 print("Pins to sweep over:", pins)
 OP = 4
 
-interval = 0.01 # 0.05
+interval = 0.02 # 0.05
 x1_max = 9
 Vin_sweep = np.arange(-x1_max, x1_max+interval, interval)
 
@@ -185,10 +185,10 @@ for i, pin in enumerate(pins):
 
     Vdiff = []
     Vouts = []
-    for v in Vin_sweep:
+    for v in tqdm(Vin_sweep):
         v = np.round(v,4)
-        obj.SetVoltage(electrode=pin, voltage=v)
-        Vop = obj.ReadVoltage(OP, debug=0)  # ch0, pin3, op1
+        obj2.SetVoltage(electrode=pin, voltage=v)
+        Vop = obj2.ReadVoltage(OP, debug=0, nSamples=30)  # ch0, pin3, op1
         Vd = v - Vop
         Vdiff.append(Vd)
         Vouts.append(Vop)
@@ -206,7 +206,7 @@ for i, pin in enumerate(pins):
     fig.savefig(fig_path, dpi=300)
     plt.close(fig)
 
-obj.fin()
+obj2.fin()
 
 print("Finished!")
 

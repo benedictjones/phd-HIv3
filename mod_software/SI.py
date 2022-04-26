@@ -21,7 +21,7 @@ class si:
 
     # # Use offset which can be found by calibrating
     # # When Calibrating, perdorm Calibrate_DACs, then Calibrate_ADCs
-    input_v_offset = 0  # y = mx + c voltage offset at input electrodes (used when scaling)
+    input_v_offset = 1  # y = mx + c voltage offset at input electrodes (used when scaling)
     output_v_offset = 0  # y = mx + c voltage offset at output electrodes (used when scaling)
 
     # Set defualt of which DAC or ADC is associated to which electrode

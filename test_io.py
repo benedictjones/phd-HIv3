@@ -11,7 +11,7 @@ from datetime import datetime
 
 
 
-obj = si(Rshunt=14000)  # 14000
+obj = si(Rshunt=56000)  # 14000
 
 Rshunt = obj.Rshunt
 num_sweeps = 2
@@ -32,6 +32,8 @@ p = 1
 OP = 4
 
 test_label = 'IO_sweep__p%s_Op%d' % (p,OP)
+#test_label = 'PKs_s9__p7_p16'
+#test_label = 'PKs_mnt__p%s_Op%d' % (p,OP)
 
 save_dir = "Results/%s/%s_%s" % (d_string, t_string, test_label)
 os.makedirs(save_dir)
@@ -39,8 +41,8 @@ os.makedirs(save_dir)
 # ################################
 
 
-interval = 0.05 # 0.05
-x1_max = 3.5
+interval = 0.025 # 0.05 # QE ~ 0.005V
+x1_max = 3.5  # 3.5
 Vin = np.arange(-x1_max, x1_max+interval, interval)  # x1_max
 #Vin = np.arange(0, 3+interval, interval)  # x1_max
 
@@ -85,7 +87,7 @@ for sweep in range(num_sweeps):
         #time.sleep(2)
         # op = obj.ReadVoltage(OP, debug=0)  # ch0, pin3, op1
 
-        Iop, Vop, Vadc = obj.ReadIV(OP, ret_type='both', nSamples=10)
+        Iop, Vop, Vadc = obj.ReadIV(OP, ret_type='both', nSamples=100)  # more samples gives a better/smoother average
 
         Vin.append(v)
         Vout.append(Vop)
@@ -142,13 +144,14 @@ for s in range(num_sweeps):
 plt.legend()
 plt.xlabel('dV')
 plt.ylabel('Iout')
+plt.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
 plt.title('Voltage drop against current\nMean R=%.2f' % (np.mean(R_slopes)))
 fig_path = "%s/FIG_Vd_Iout.png" % (save_dir)
 figI.savefig(fig_path, dpi=300)
 plt.close(figI)
 
 #
-
+"""
 figI = plt.figure()
 for s in range(num_sweeps):
     plt.plot(sweep_Vout[s], sweep_Iout[s], label=('sweep %d' % (s)))
@@ -156,10 +159,11 @@ plt.legend()
 plt.xlabel('Vout')
 plt.ylabel('Iout')
 plt.title('Output Voltage against current')
+plt.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
 fig_path = "%s/FIG_Vout_Iout.png" % (save_dir)
 figI.savefig(fig_path, dpi=300)
 plt.close(figI)
-
+"""
 #
 
 figV = plt.figure()

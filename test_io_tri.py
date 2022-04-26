@@ -37,7 +37,7 @@ os.makedirs(save_dir)
 # ################################
 
 
-interval = 0.01 # 0.05
+interval = 0.02 # 0.05
 x1_max = 3.5
 Vin = np.arange(-x1_max, x1_max+interval, interval)  # x1_max
 Vin = np.arange(0, 3+interval, interval)  # x1_max
