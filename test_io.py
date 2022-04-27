@@ -11,7 +11,7 @@ from datetime import datetime
 
 
 
-obj = si(Rshunt=56000)  # 14000
+obj = si(Rshunt=47000)  # 14000
 
 Rshunt = obj.Rshunt
 num_sweeps = 2
@@ -42,7 +42,7 @@ os.makedirs(save_dir)
 
 
 interval = 0.025 # 0.05 # QE ~ 0.005V
-x1_max = 3.5  # 3.5
+x1_max = 3  # 3.5
 Vin = np.arange(-x1_max, x1_max+interval, interval)  # x1_max
 #Vin = np.arange(0, 3+interval, interval)  # x1_max
 
