@@ -57,7 +57,11 @@ class Dac_register(ctypes.Union):
 class hi:
 
     # ADC - variables
-    __adcrefvoltage = 5  # reference voltage for the ADC (& DAC) chip.
+    __adcrefvoltage = 4.97 # 4.87 # 4.9 # 5  # reference voltage for the ADC (& DAC) chip.
+    adc_adjusted_ref = 4.97
+    __dacrefvoltage = 0.994 #0.994
+    
+    # DAC scale 1V ref is actually: 0.986V
 
     # # ADC (MCP3204) - Define SPI bus and init
     # # Clock speed > 10kHz,
@@ -102,7 +106,7 @@ class hi:
             self.gain = gainFactor
             self.maxDacVoltage = self.__dacMaxOutput__[self.gain]
 
-
+        print("inside hit:", self.__adcrefvoltage)
         # # Assign chip enable (CE) GPIO pins
         self.CE = {}
 
@@ -403,6 +407,18 @@ class hi:
         print("HI is now shut down via the R-Pi connection.")
 
         return
+
+    # 
+    
+    #
+    
+    @property
+    def adcrefvoltage(self):
+        return self.__adcrefvoltage
+    
+    @property
+    def dacrefvoltage(self):
+        return self.__dacrefvoltage
 
 #
 

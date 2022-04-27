@@ -58,7 +58,7 @@ if not os.path.exists(save_dir):
 
 
 # # Initiate SI and HI
-obj = si(Rshunt=14000, electrode3='in', electrode8='in', electrode11='in')  # , electrode3='in'
+obj = si(Rshunt=47000, electrode3='in', electrode8='in', electrode11='in')  # , electrode3='in'
 Rshunt = obj.Rshunt
 
 # # Set the Calibration data to zero
@@ -158,7 +158,7 @@ print("Retesting with calibration...")
 
 
 # # Initiate SI and HI
-obj2 = si(Rshunt=14000, electrode3='in', electrode8='in', electrode11='in')  # , electrode3='in'
+obj2 = si(Rshunt=47000, electrode3='in', electrode8='in', electrode11='in')  # , electrode3='in'
 Rshunt = obj2.Rshunt
 
 # ################################

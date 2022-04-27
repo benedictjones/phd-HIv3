@@ -3,6 +3,7 @@ import numpy as np
 import time
 import h5py
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 from scipy.stats import linregress
 
@@ -72,7 +73,7 @@ All_Iout = []
 time_list = []
 tref = time.time()
 
-
+pbar = tqdm(total=num_sweeps*len(Vin_sweep))
 for sweep in range(num_sweeps):
 
     Vin = []
@@ -100,14 +101,18 @@ for sweep in range(num_sweeps):
         All_Iout.append(Iop)
         time_list.append(time.time()-tref)
 
-        print("Vin=", v, " Vout=", Vop, ",  I=", Iop)
+        # print("Vin=", v, " Vout=", Vop, ",  I=", Iop)
         #input("Press Enter to move to next input V")
+
+        pbar.set_description("%d/%d | Vi=%.3f, Vo=%.3f, Io=%s" % (sweep+1, num_sweeps, v, Vop, str(Iop)))
+        pbar.update(1)
 
     sweep_Vin.append(Vin)
     sweep_Vout.append(Vout)
     sweep_dV.append(dV)
     sweep_Iout.append(Iout)
 
+pbar.close()
 t_read = time.time()-tref
 obj.fin()
 print("Time to do all readings = %f" % (t_read))

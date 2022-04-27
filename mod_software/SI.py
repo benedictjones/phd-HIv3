@@ -85,7 +85,8 @@ class si:
 
         # # Create hardware interface (HI) object
         self.hi = hi()
-
+        print("\n>>>", self.hi.adcrefvoltage)
+        
         # # Set max voltage
         self.maxDacVoltage = self.hi.maxDacVoltage
 
@@ -433,7 +434,7 @@ class si:
         #
 
         # # Scale using offset
-        Vref = self.hi.__adcrefvoltage/5  # ideal 1k-40k voltage divider
+        Vref = self.hi.dacrefvoltage
         if inverse == 0:
             V_scaled = ((V + offset)/10) + Vref   # compute required DAC voltage for set electrode voltage
         elif inverse == 1:
@@ -464,7 +465,7 @@ class si:
         #
 
         # # Scale using offset
-        Vref = self.hi.__adcrefvoltage  # the system voltage ref (5V ideally)
+        Vref = self.hi.adc_adjusted_ref # self.hi.adcrefvoltage  # the system voltage ref (5V ideally)
         if inverse == 0:
             V_scaled = 4*V - 2*Vref + offset  # compute electrode voltage from a read ADC voltage
         elif inverse == 1:
