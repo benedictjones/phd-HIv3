@@ -191,10 +191,10 @@ class si:
         # Return
         if ret_type == 0:
             return np.round(I,10), vop
-            
+
         elif ret_type == 'both':
             return np.round(I,10), vop, v_adc
-        
+
 
     #
 
@@ -308,7 +308,7 @@ class si:
 
         # # Scale voltage by the hardware design
         vop = self.Scale_ADC_to_OutputV(adc_voltage, the_channel)
-        
+
         if debug == 1:
             print("Output Electode voltage:", vop, ", Output ADC voltage:", adc_voltage)
 
@@ -317,7 +317,7 @@ class si:
         # Return
         if ret_type == 0:
             return np.round(vop,6)
-            
+
         elif ret_type == 'both':
             return np.round(vop,6), np.round(adc_voltage,6)
 
@@ -413,10 +413,16 @@ class si:
         """
         Taking the set electrode voltage, compute the required DAC voltage.
 
+        Using a Differential Amplifier https://www.electronics-tutorials.ws/opamp/opamp_5.html
+        so, the applied voltage:
+            > Vo = (R2/R1)*(Vin-Vref),  where R2 = 100, R1 = 10, Vref is ideally 1V
+
         Note: The hardware scales the DAC voltage [0,2]V to [-10,10]V.
+        The reference for this scaling is produced by a potential divider which
+        which steps down the V_adc_ref by a factor of five.
         """
 
-        # # Calaculate Offset
+        # # Calaculate Offset from previous calibration
         if self.input_v_offset == 1 and electrode != 'ideal':
             offset = V*self.InOffset_G_bias[electrode-1] + self.InOffset_C_bias[electrode-1]
             # print(">>>", offset, ", m=", self.InOffset_G_bias[electrode-1], ", x=", self.InOffset_C_bias[electrode-1])
@@ -424,13 +430,14 @@ class si:
             offset = 0
             # print(">>>", offset)
 
-
+        #
 
         # # Scale using offset
+        Vref = self.hi.__adcrefvoltage/5  # ideal 1k-40k voltage divider
         if inverse == 0:
-            V_scaled = ((V + offset)/10) + 1   # compute required DAC voltage for set electrode voltage
+            V_scaled = ((V + offset)/10) + Vref   # compute required DAC voltage for set electrode voltage
         elif inverse == 1:
-            V_scaled = 10*V - 10 - offset  # compute electrode voltage for a set DAC voltage
+            V_scaled = 10*(V - Vref) - offset  # compute electrode voltage for a set DAC voltage
         else:
             raise ValueError("Invalid inverse toggle.")
 
@@ -441,9 +448,11 @@ class si:
     def Scale_ADC_to_OutputV(self, V, channel='ideal', inverse=0):
         """
         Taking the read ADC voltage, compute the electrode voltage.
+        So, the output step:
+            > Vadc = (2*Vref+Vin)/4,  where Vref is ideally 5V
 
         Note: The hardware scales the electode volrages from [-10,10]V to
-        [0,5]V so the ADC can read them.
+        [0,V_adc_ref]V so the ADC can read them.
         """
 
         # # Calaculate Offset
@@ -452,11 +461,14 @@ class si:
         else:
             offset = 0
 
+        #
+
         # # Scale using offset
+        Vref = self.hi.__adcrefvoltage  # the system voltage ref (5V ideally)
         if inverse == 0:
-            V_scaled = 4*V - 10 + offset  # compute electrode voltage from a read ADC voltage
+            V_scaled = 4*V - 2*Vref + offset  # compute electrode voltage from a read ADC voltage
         elif inverse == 1:
-            V_scaled = 0.25*(V-offset) + 2.5  # compute the ADC voltage for an electrode voltage
+            V_scaled = (V-offset)/4 + Vref/2  # compute the ADC voltage for an electrode voltage
         else:
             raise ValueError("Invalid inverse toggle.")
 
