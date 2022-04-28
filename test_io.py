@@ -63,6 +63,8 @@ sweep_Vin = []
 sweep_Vout = []
 sweep_Iout = []
 sweep_dV = []
+sweep_Vdac = []
+sweep_Vadc = []
 
 All_Vin = []
 All_Vout = []
@@ -84,7 +86,7 @@ for sweep in range(num_sweeps):
 
         v = np.round(v,3)
 
-        obj.SetVoltage(electrode=p, voltage=v)
+        Vdac = obj.SetVoltage(electrode=p, voltage=v)
         #time.sleep(2)
         # op = obj.ReadVoltage(OP, debug=0)  # ch0, pin3, op1
 
@@ -111,6 +113,8 @@ for sweep in range(num_sweeps):
     sweep_Vout.append(Vout)
     sweep_dV.append(dV)
     sweep_Iout.append(Iout)
+    sweep_Vdac.append(Vdac)
+    sweep_Vadc.append(Vadc)
 
 pbar.close()
 t_read = time.time()-tref
@@ -129,13 +133,15 @@ with h5py.File(location, 'a') as hdf:
         G_subsub.create_dataset('Vout', data=sweep_Vout[s])
         G_subsub.create_dataset('dV', data=sweep_dV[s])
         G_subsub.create_dataset('Iout', data=sweep_Iout[s])
+        G_subsub.create_dataset('Vdac', data=sweep_Vdac[s])
+        G_subsub.create_dataset('Vadc', data=sweep_Vadc[s])
 
 #
 
 figI = plt.figure()
 R_slopes = []
 for s in range(num_sweeps):
-    
+
     if Rshunt == 'none':
         Rm = np.nan
     else:
@@ -143,16 +149,16 @@ for s in range(num_sweeps):
         Rm = 1/reg.slope
         print("Sweep %d, Rmaterial ~ %.1f" % (s,Rm))
         R_slopes.append(Rm)
-        
+
     plt.plot(sweep_dV[s], sweep_Iout[s], label=('sweep %d, R=%.1f' % (s, Rm)))
-    
+
 plt.legend()
 plt.xlabel('dV')
 plt.ylabel('Iout')
 plt.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
 plt.title('Voltage drop against current\nMean R=%.2f' % (np.mean(R_slopes)))
-fig_path = "%s/FIG_Vd_Iout.png" % (save_dir)
-figI.savefig(fig_path, dpi=300)
+fig_path = "%s/FIG_Vd_vs_Iout.png" % (save_dir)
+figI.savefig(fig_path, dpi=200)
 plt.close(figI)
 
 #
@@ -166,7 +172,7 @@ plt.ylabel('Iout')
 plt.title('Output Voltage against current')
 plt.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
 fig_path = "%s/FIG_Vout_Iout.png" % (save_dir)
-figI.savefig(fig_path, dpi=300)
+figI.savefig(fig_path, dpi=200)
 plt.close(figI)
 """
 #
@@ -178,8 +184,8 @@ plt.legend()
 plt.xlabel('Vin')
 plt.ylabel('Vout')
 plt.title('Voltage Sweep')
-fig_path = "%s/FIG_Vout.png" % (save_dir)
-figV.savefig(fig_path, dpi=300)
+fig_path = "%s/FIG_Vin_vs_Vout.png" % (save_dir)
+figV.savefig(fig_path, dpi=200)
 plt.close(figV)
 
 #
@@ -190,7 +196,7 @@ plt.xlabel('Instance')
 plt.ylabel('Vout')
 plt.title('Triangle wave sweep')
 fig_path = "%s/FIG_Vout_continuous.png" % (save_dir)
-figV2.savefig(fig_path, dpi=300)
+figV2.savefig(fig_path, dpi=200)
 plt.close(figV2)
 
 #
@@ -201,7 +207,7 @@ plt.xlabel('Time')
 plt.ylabel('Vout')
 plt.title('Electrode voltage for a Triangle wave sweep')
 fig_path = "%s/FIG_TRI_Vout_vs_time.png" % (save_dir)
-figV3.savefig(fig_path, dpi=300)
+figV3.savefig(fig_path, dpi=200)
 plt.close(figV3)
 #
 
@@ -212,7 +218,7 @@ plt.xlabel('Instance')
 plt.ylabel('Vout')
 plt.title('Electrode voltage for a Triangle wave sweep\nInstance set/read rate = %f' % (num_sweeps*len(Vin_sweep)/t_read))
 fig_path = "%s/FIG_TRI_Vout.png" % (save_dir)
-figV4.savefig(fig_path, dpi=300)
+figV4.savefig(fig_path, dpi=200)
 
 #
 
@@ -222,8 +228,45 @@ plt.xlabel('Time')
 plt.ylabel('Vadc')
 plt.title('Vadc output for a Triangle wave sweep')
 fig_path = "%s/FIG_TRI_Vadc_vs_time.png" % (save_dir)
-figVadc.savefig(fig_path, dpi=300)
+figVadc.savefig(fig_path, dpi=200)
 plt.close(figVadc)
+
+#
+
+#
+
+fig = plt.figure()
+for s in range(num_sweeps):
+    plt.plot(sweep_Vdac[s], sweep_Vadc[s], label=('sweep %d' % (s)))
+plt.legend()
+plt.xlabel('Vdac')
+plt.ylabel('Vadc')
+plt.title('Real hardware values')
+fig_path = "%s/FIG_Vdac_vs_Vadc.png" % (save_dir)
+fig.savefig(fig_path, dpi=200)
+plt.close(fig)
+
+fig = plt.figure()
+for s in range(num_sweeps):
+    plt.plot(sweep_Vin[s], sweep_Vdac[s], label=('sweep %d' % (s)))
+plt.legend()
+plt.xlabel('Vin')
+plt.ylabel('Vdac')
+plt.title('Set voltage is translated to a hardware DAC voltage')
+fig_path = "%s/FIG_Vin_vs_Vdac.png" % (save_dir)
+fig.savefig(fig_path, dpi=200)
+plt.close(fig)
+
+fig = plt.figure()
+for s in range(num_sweeps):
+    plt.plot(sweep_Vadc[s], sweep_Vout[s], label=('sweep %d' % (s)))
+plt.legend()
+plt.xlabel('Vadc')
+plt.ylabel('Vout')
+plt.title('Read ADC value is translated back to the output')
+fig_path = "%s/FIG_Vout_vs_Vadc.png" % (save_dir)
+fig.savefig(fig_path, dpi=200)
+plt.close(fig)
 #
 
 plt.show()

@@ -86,7 +86,7 @@ class si:
         # # Create hardware interface (HI) object
         self.hi = hi()
         print("\n>>>", self.hi.adcrefvoltage)
-        
+
         # # Set max voltage
         self.maxDacVoltage = self.hi.maxDacVoltage
 
@@ -139,7 +139,7 @@ class si:
 
         # time.sleep(0.05)
 
-        return 0
+        return V_dac
 
     #
 

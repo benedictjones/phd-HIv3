@@ -58,9 +58,9 @@ class hi:
 
     # ADC - variables
     __adcrefvoltage = 4.97 # 4.87 # 4.9 # 5  # reference voltage for the ADC (& DAC) chip.
-    adc_adjusted_ref = 4.97
+    adc_adjusted_ref = 4.97  # used for scaling function
     __dacrefvoltage = 0.994 #0.994
-    
+
     # DAC scale 1V ref is actually: 0.986V
 
     # # ADC (MCP3204) - Define SPI bus and init
@@ -408,14 +408,14 @@ class hi:
 
         return
 
-    # 
-    
     #
-    
+
+    #
+
     @property
     def adcrefvoltage(self):
         return self.__adcrefvoltage
-    
+
     @property
     def dacrefvoltage(self):
         return self.__dacrefvoltage
