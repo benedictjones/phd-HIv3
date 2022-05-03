@@ -12,7 +12,7 @@ from datetime import datetime
 
 
 
-obj = si(Rshunt=47000)  # 14000
+obj = si(Rshunt=100000)  # 14000 , 47000
 
 Rshunt = obj.Rshunt
 num_sweeps = 2
@@ -33,7 +33,7 @@ p = 1
 OP = 4
 
 test_label = 'IO_sweep__p%s_Op%d' % (p,OP)
-#test_label = 'PKs_s9__p7_p16'
+test_label = 'PKs_s9__p2_p15'
 #test_label = 'PKs_mnt__p%s_Op%d' % (p,OP)
 
 save_dir = "Results/%s/%s_%s" % (d_string, t_string, test_label)
@@ -42,8 +42,8 @@ os.makedirs(save_dir)
 # ################################
 
 
-interval = 0.025 # 0.05 # QE ~ 0.005V
-x1_max = 3  # 3.5
+interval = 0.025 # 0.05 #  DAC-QE~0.0005, ADC-QE~0.002V
+x1_max = 9  # 3.5, 3
 Vin = np.arange(-x1_max, x1_max+interval, interval)  # x1_max
 #Vin = np.arange(0, 3+interval, interval)  # x1_max
 
@@ -78,10 +78,12 @@ tref = time.time()
 pbar = tqdm(total=num_sweeps*len(Vin_sweep))
 for sweep in range(num_sweeps):
 
-    Vin = []
-    Vout = []
-    dV = []
-    Iout = []
+    Vins = []
+    Vouts = []
+    dVs = []
+    Iouts = []
+    Vdacs = []
+    Vadcs = []
     for v in Vin_sweep:
 
         v = np.round(v,3)
@@ -90,12 +92,14 @@ for sweep in range(num_sweeps):
         #time.sleep(2)
         # op = obj.ReadVoltage(OP, debug=0)  # ch0, pin3, op1
 
-        Iop, Vop, Vadc = obj.ReadIV(OP, ret_type='both', nSamples=100)  # more samples gives a better/smoother average
+        Iop, Vop, Vadc = obj.ReadIV(OP, ret_type='both', nSamples=200)  # more samples gives a better/smoother average
 
-        Vin.append(v)
-        Vout.append(Vop)
-        dV.append(v-Vop)
-        Iout.append(Iop)
+        Vins.append(v)
+        Vouts.append(Vop)
+        dVs.append(v-Vop)
+        Iouts.append(Iop)
+        Vdacs.append(Vdac)
+        Vadcs.append(Vadc)
         All_Vin.append(v)
         All_Vout.append(Vop)
         All_dV.append(v-Vop)
@@ -109,12 +113,12 @@ for sweep in range(num_sweeps):
         pbar.set_description("%d/%d | Vi=%.3f, Vo=%.3f, Io=%s" % (sweep+1, num_sweeps, v, Vop, str(Iop)))
         pbar.update(1)
 
-    sweep_Vin.append(Vin)
-    sweep_Vout.append(Vout)
-    sweep_dV.append(dV)
-    sweep_Iout.append(Iout)
-    sweep_Vdac.append(Vdac)
-    sweep_Vadc.append(Vadc)
+    sweep_Vin.append(Vins)
+    sweep_Vout.append(Vouts)
+    sweep_dV.append(dVs)
+    sweep_Iout.append(Iouts)
+    sweep_Vdac.append(Vdacs)
+    sweep_Vadc.append(Vadcs)
 
 pbar.close()
 t_read = time.time()-tref
@@ -183,7 +187,7 @@ for s in range(num_sweeps):
 plt.legend()
 plt.xlabel('Vin')
 plt.ylabel('Vout')
-plt.title('Voltage Sweep')
+plt.title('Voltage Sweep (Interval= %s)' % (str(interval)))
 fig_path = "%s/FIG_Vin_vs_Vout.png" % (save_dir)
 figV.savefig(fig_path, dpi=200)
 plt.close(figV)

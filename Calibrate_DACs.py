@@ -50,6 +50,8 @@ else:
 # Initialte
 # #################################
 
+Resitor = 100000 # 47000
+
 # # Create Save Location
 
 save_dir = 'Results/Calibration/DACs/%s__%s' % (d_string, t_string)
@@ -58,7 +60,7 @@ if not os.path.exists(save_dir):
 
 
 # # Initiate SI and HI
-obj = si(Rshunt=47000, electrode3='in', electrode8='in', electrode11='in')  # , electrode3='in'
+obj = si(Rshunt=Resitor, electrode3='in', electrode8='in', electrode11='in')  # , electrode3='in'
 Rshunt = obj.Rshunt
 
 # # Set the Calibration data to zero
@@ -134,7 +136,7 @@ with h5py.File(location, 'r+') as hdf:
         plt.ylabel('Vdiff = Vin - Vout')
         plt.title('Voltage sweep being directly read\nVdiff = %f*Vin + %f :' % (reg.slope, reg.intercept))
         fig_path = "%s/FIG_In%d_OP%d_VinVdiff.png" % (save_dir, pin, OP)
-        fig.savefig(fig_path, dpi=300)
+        fig.savefig(fig_path, dpi=200)
         plt.close(fig)
         
 obj.fin()
@@ -158,7 +160,7 @@ print("Retesting with calibration...")
 
 
 # # Initiate SI and HI
-obj2 = si(Rshunt=47000, electrode3='in', electrode8='in', electrode11='in')  # , electrode3='in'
+obj2 = si(Rshunt=Resitor, electrode3='in', electrode8='in', electrode11='in')  # , electrode3='in'
 Rshunt = obj2.Rshunt
 
 # ################################
@@ -203,7 +205,7 @@ for i, pin in enumerate(pins):
     plt.ylabel('Vdiff = Vin - Vout')
     plt.title('Voltage sweep being directly read\nVdiff = %f*Vin + %f :' % (reg.slope, reg.intercept))
     fig_path = "%s/FIG_In%d_OP%d_VinVdiff_CORRECTED.png" % (save_dir, pin, OP)
-    fig.savefig(fig_path, dpi=300)
+    fig.savefig(fig_path, dpi=200)
     plt.close(fig)
 
 obj2.fin()
