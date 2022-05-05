@@ -21,7 +21,7 @@ class si:
 
     # # Use offset which can be found by calibrating
     # # When Calibrating, perdorm Calibrate_DACs, then Calibrate_ADCs
-    input_v_offset = 1  # y = mx + c voltage offset at input electrodes (used when scaling)
+    input_v_offset = 0  # y = mx + c voltage offset at input electrodes (used when scaling)
     output_v_offset = 0  # y = mx + c voltage offset at output electrodes (used when scaling)
 
     # Set defualt of which DAC or ADC is associated to which electrode
@@ -66,7 +66,8 @@ class si:
 
 
     # Initialise the object
-    def __init__(self, electrode3='out', electrode8='out', electrode11='out', electrode16='out', Rshunt='none'):
+    def __init__(self, electrode3='out', electrode8='out', electrode11='out', electrode16='out',
+                 Rshunt='none', ADCspeed=None):
         """
         Inititalise the Software Interface (SI) object.
         """
@@ -84,7 +85,7 @@ class si:
                 self.OutOffset_G_bias = np.array(hdf.get('/Output_Offset/Gradient'))
 
         # # Create hardware interface (HI) object
-        self.hi = hi()
+        self.hi = hi(adc_speed=ADCspeed)
         print("\n>>>", self.hi.adcrefvoltage)
 
         # # Set max voltage
@@ -179,9 +180,13 @@ class si:
             loc_scheme = 'output' (1 to 4)
             loc_scheme = 'channel' (0 to 3)
             loc_scheme = 'electrode' output electrode location (3, 8, 11, 16)
+
+        Three return types:
+            - "0"   returns: Iop, Vop
+            - "1"   returns: Iop, Vop, Vadc, raw_bit_value
         """
 
-        vop, v_adc = self.ReadVoltage(location, loc_scheme, nSamples, ret_type='both')  # ch0, pin3, op1
+        vop, v_adc, bit_adc = self.ReadVoltage(location, loc_scheme, nSamples, ret_type=1)  # ch0, pin3, op1
 
         # # Calc current from shunt resistance
         if self.Rshunt == 'none':
@@ -191,10 +196,10 @@ class si:
 
         # Return
         if ret_type == 0:
-            return np.round(I,10), vop
+            return np.round(I,11), vop
 
-        elif ret_type == 'both':
-            return np.round(I,10), vop, v_adc
+        elif ret_type == 1:
+            return np.round(I,11), vop, v_adc, bit_adc
 
 
     #
@@ -208,6 +213,10 @@ class si:
             loc_scheme = 'channel' (0 to 3)
             loc_scheme = 'electrode' output electrode location (3, 8, 11, 16)
 
+        Three return types:
+            - "raw" returns: Vadc, Vadc_std
+            - "0"   returns: Vop
+            - "1"   returns: Vop, Vadc, raw_bit_value
 
         Note: The hardware scales the electode voltages from [-10,10]V to
         [0,5]V so the ADC can read them.
@@ -266,14 +275,14 @@ class si:
             success = 0
 
             # # Read Voltage using a "burst and average read"
-            adc_voltage, Vstd = self.hi.read_adc_Average(chip='ADC1',
-                                               channel=the_channel,
-                                               nAverage=nSamples*attempt,
-                                               bDebug=0, bDebug_graph=debug)
+            Vadc, Vadc_std, bit, bit_std = self.hi.read_adc_Average(chip='ADC1',
+                                                                       channel=the_channel,
+                                                                       nAverage=nSamples*attempt,
+                                                                       bDebug=0, bDebug_graph=debug)
 
             """
             # # Run check on coefficient of variation (CV)
-            CV = Vstd/adc_voltage
+            CV = Vstd/Vadc
             print("\nVstd=%f, CV=%f" % (Vstd, CV))
             print("Vbit = %f" % ( (4 * (5/2**12)) ) )
             if CV < 1:
@@ -289,10 +298,10 @@ class si:
 
             #"""
             # # Run std vs quantisation noise check
-            if Vstd <= (4 * (5/2**12)):
+            if bit_std <= 4:
                 success = success + 1
             else:
-                print("\nAttempt %d Read voltage failed std quantisation noise check..." % (attempt))
+                print("\nAttempt %d Read voltage failed std quantisation noise check... (bit std=%.4f)" % (attempt, bit_std))
                 #print(" > std of ADC output = ", Vstd)
             #"""
 
@@ -305,22 +314,22 @@ class si:
                 return
 
         if ret_type == 'raw':
-            return adc_voltage, Vstd
+            return Vadc, Vadc_std
 
         # # Scale voltage by the hardware design
-        vop = self.Scale_ADC_to_OutputV(adc_voltage, the_channel)
+        vop = self.Scale_ADC_to_OutputV(Vadc, the_channel)
 
         if debug == 1:
-            print("Output Electode voltage:", vop, ", Output ADC voltage:", adc_voltage)
+            print("Output Electode voltage:", vop, ", Output ADC voltage:", Vadc)
 
-        # print("Output Electode voltage:", vop, ", Output ADC voltage:", adc_voltage, " , chanel:", sel_ch)
+        # print("Output Electode voltage:", vop, ", Output ADC voltage:", Vadc, " , chanel:", sel_ch)
 
         # Return
         if ret_type == 0:
             return np.round(vop,6)
 
-        elif ret_type == 'both':
-            return np.round(vop,6), np.round(adc_voltage,6)
+        elif ret_type == 1:
+            return np.round(vop,6), np.round(Vadc,6), np.round(bit,6)
 
     #
 

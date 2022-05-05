@@ -12,7 +12,7 @@ from datetime import datetime
 
 
 
-obj = si(Rshunt=100000)  # 14000 , 47000
+obj = si(Rshunt=100000, ADCspeed=2000000)  # 14000 , 47000
 
 Rshunt = obj.Rshunt
 num_sweeps = 2
@@ -33,7 +33,8 @@ p = 1
 OP = 4
 
 test_label = 'IO_sweep__p%s_Op%d' % (p,OP)
-test_label = 'PKs_s9__p2_p15'
+test_label = 'IO_sweep__p%s_Op%d__%dFadc' % (p,OP, ADCspeed)
+# test_label = 'PKs_s9__p2_p15'
 #test_label = 'PKs_mnt__p%s_Op%d' % (p,OP)
 
 save_dir = "Results/%s/%s_%s" % (d_string, t_string, test_label)
@@ -65,12 +66,14 @@ sweep_Iout = []
 sweep_dV = []
 sweep_Vdac = []
 sweep_Vadc = []
+sweep_bit_values = []
 
 All_Vin = []
 All_Vout = []
 All_dV = []
 All_Vadc = []
 All_Iout = []
+All_bit_values = []
 
 time_list = []
 tref = time.time()
@@ -84,6 +87,7 @@ for sweep in range(num_sweeps):
     Iouts = []
     Vdacs = []
     Vadcs = []
+    ADC_bit_values = []
     for v in Vin_sweep:
 
         v = np.round(v,3)
@@ -92,7 +96,7 @@ for sweep in range(num_sweeps):
         #time.sleep(2)
         # op = obj.ReadVoltage(OP, debug=0)  # ch0, pin3, op1
 
-        Iop, Vop, Vadc = obj.ReadIV(OP, ret_type='both', nSamples=200)  # more samples gives a better/smoother average
+        Iop, Vop, Vadc, adc_bit_value = obj.ReadIV(OP, ret_type=1, nSamples=200)  # more samples gives a better/smoother average
 
         Vins.append(v)
         Vouts.append(Vop)
@@ -100,11 +104,13 @@ for sweep in range(num_sweeps):
         Iouts.append(Iop)
         Vdacs.append(Vdac)
         Vadcs.append(Vadc)
+        ADC_bit_values.append(adc_bit_value)
         All_Vin.append(v)
         All_Vout.append(Vop)
         All_dV.append(v-Vop)
         All_Vadc.append(Vadc)
         All_Iout.append(Iop)
+        All_bit_values.append(adc_bit_value)
         time_list.append(time.time()-tref)
 
         # print("Vin=", v, " Vout=", Vop, ",  I=", Iop)
@@ -119,6 +125,7 @@ for sweep in range(num_sweeps):
     sweep_Iout.append(Iouts)
     sweep_Vdac.append(Vdacs)
     sweep_Vadc.append(Vadcs)
+    sweep_bit_values.append(ADC_bit_values)
 
 pbar.close()
 t_read = time.time()-tref
@@ -139,6 +146,7 @@ with h5py.File(location, 'a') as hdf:
         G_subsub.create_dataset('Iout', data=sweep_Iout[s])
         G_subsub.create_dataset('Vdac', data=sweep_Vdac[s])
         G_subsub.create_dataset('Vadc', data=sweep_Vadc[s])
+        G_subsub.create_dataset('ADC_bit_values', data=sweep_bit_values[s])
 
 #
 
@@ -194,6 +202,20 @@ plt.close(figV)
 
 #
 
+figV = plt.figure()
+for s in range(num_sweeps):
+    plt.plot(sweep_Vin[s], sweep_bit_values[s], label=('sweep %d' % (s)))
+plt.legend()
+plt.grid()
+plt.xlabel('Vin')
+plt.ylabel('ADC Bits value')
+plt.title('Voltage Sweep (Interval= %s)' % (str(interval)))
+fig_path = "%s/FIG_Vin_vs_ADCbits.png" % (save_dir)
+figV.savefig(fig_path, dpi=200)
+plt.close(figV)
+
+#
+
 figV2 = plt.figure()
 plt.plot(All_Vout)
 plt.xlabel('Instance')
@@ -216,12 +238,11 @@ plt.close(figV3)
 #
 
 figV4 = plt.figure()
-plt.plot(All_Vout)
-
+plt.plot(All_bit_values)
 plt.xlabel('Instance')
-plt.ylabel('Vout')
+plt.ylabel('ADC bit value')
 plt.title('Electrode voltage for a Triangle wave sweep\nInstance set/read rate = %f' % (num_sweeps*len(Vin_sweep)/t_read))
-fig_path = "%s/FIG_TRI_Vout.png" % (save_dir)
+fig_path = "%s/FIG_TRI_ADCbits.png" % (save_dir)
 figV4.savefig(fig_path, dpi=200)
 
 #

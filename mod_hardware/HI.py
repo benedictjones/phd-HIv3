@@ -70,7 +70,7 @@ class hi:
     spiADC = spidev.SpiDev()
     spiADC.open(0, 0)  # using CE0!!!
     # spiADC.speed = 900000
-    spiADC.max_speed_hz = (2000000)  # 900000, 2000000
+    spiADC.max_speed_hz = (2000000)  # 1000000, 2000000
 
 
     # # DAC (MCP4822) - Define SPI bus and init
@@ -86,7 +86,7 @@ class hi:
                             2:4.096  # 4.096 if Vdd is 5V, 3.3 for 3.3v
                        }
 
-    def __init__(self, gainFactor=1):
+    def __init__(self, gainFactor=1, adc_speed=None):
         """Class Constructor
         gainFactor -- Set the DAC's gain factor. The value should
            be 1 or 2.  Gain factor is used to determine output voltage
@@ -105,6 +105,13 @@ class hi:
         else:
             self.gain = gainFactor
             self.maxDacVoltage = self.__dacMaxOutput__[self.gain]
+
+        # # Set ADC spi clock speed
+        if adc_speed is not None:
+            if adc_speed < 2000000 and adc_speed > 50000:
+                self.spiADC.max_speed_hz = adc_speed
+            else:
+                raise ValueError("ADC speed is outside of allowed values (50000<Fclk<2000000)")
 
         print("inside hit:", self.__adcrefvoltage)
         # # Assign chip enable (CE) GPIO pins
@@ -172,7 +179,7 @@ class hi:
 
     #
 
-    def read_adc(self, chip='ADC1', channel=0, mode=0):
+    def read_adc(self, chip='ADC1', channel=0, mode=0, return_raw=0):
         """
         Read a voltage value from one of the 4 channels.
         """
@@ -180,7 +187,12 @@ class hi:
         raw = self.mcp_adc.Read(chip=chip, channel=channel, diff=mode)
         voltage = (self.__adcrefvoltage/4096)*raw
 
-        return voltage
+        if return_raw == 0:
+            return voltage
+        elif return_raw == 1:
+            return voltage, raw
+        else:
+            raise ValueError("Return Raw argumnet must be 0 or 1.")
 
     #
 
@@ -219,6 +231,8 @@ class hi:
             v_list.append((self.__adcrefvoltage/4096)*raw)
         fMean = np.mean(v_list)
         fstd = np.std(v_list)
+        rawMean = np.mean(raw_list)
+        rawStd = np.std(raw_list)
 
         toc = time.time()
 
@@ -237,7 +251,7 @@ class hi:
             # plt.show()
             plt.close(fig_debug)
 
-        return fMean, fstd
+        return fMean, fstd, rawMean, rawStd
 
     #
 
