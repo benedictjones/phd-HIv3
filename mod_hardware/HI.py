@@ -108,7 +108,7 @@ class hi:
 
         # # Set ADC spi clock speed
         if adc_speed is not None:
-            if adc_speed < 2000000 and adc_speed > 50000:
+            if adc_speed <= 2000000 and adc_speed >= 50000:
                 self.spiADC.max_speed_hz = adc_speed
             else:
                 raise ValueError("ADC speed is outside of allowed values (50000<Fclk<2000000)")

@@ -11,8 +11,8 @@ import os
 from datetime import datetime
 
 
-
-obj = si(Rshunt=100000, ADCspeed=2000000)  # 14000 , 47000
+ADCfclk = 1000000 # 2000000
+obj = si(Rshunt=100000, ADCspeed=ADCfclk)  # 14000 , 47000
 
 Rshunt = obj.Rshunt
 num_sweeps = 2
@@ -33,7 +33,7 @@ p = 1
 OP = 4
 
 test_label = 'IO_sweep__p%s_Op%d' % (p,OP)
-test_label = 'IO_sweep__p%s_Op%d__%dFadc' % (p,OP, ADCspeed)
+test_label = 'IO_sweep__p%s_Op%d__8_2Meg_%dFadc' % (p,OP, ADCfclk)
 # test_label = 'PKs_s9__p2_p15'
 #test_label = 'PKs_mnt__p%s_Op%d' % (p,OP)
 
@@ -43,8 +43,8 @@ os.makedirs(save_dir)
 # ################################
 
 
-interval = 0.025 # 0.05 #  DAC-QE~0.0005, ADC-QE~0.002V
-x1_max = 9  # 3.5, 3
+interval = 0.01 # 0.05 #  DAC-QE~0.0005, ADC-QE~0.002V
+x1_max = 3  # 3.5, 3
 Vin = np.arange(-x1_max, x1_max+interval, interval)  # x1_max
 #Vin = np.arange(0, 3+interval, interval)  # x1_max
 
@@ -96,7 +96,7 @@ for sweep in range(num_sweeps):
         #time.sleep(2)
         # op = obj.ReadVoltage(OP, debug=0)  # ch0, pin3, op1
 
-        Iop, Vop, Vadc, adc_bit_value = obj.ReadIV(OP, ret_type=1, nSamples=200)  # more samples gives a better/smoother average
+        Iop, Vop, Vadc, adc_bit_value = obj.ReadIV(OP, ret_type=1, nSamples=50)  # more samples gives a better/smoother average
 
         Vins.append(v)
         Vouts.append(Vop)
@@ -223,7 +223,7 @@ plt.ylabel('Vout')
 plt.title('Triangle wave sweep')
 fig_path = "%s/FIG_Vout_continuous.png" % (save_dir)
 figV2.savefig(fig_path, dpi=200)
-plt.close(figV2)
+# plt.close(figV2)
 
 #
 
@@ -244,6 +244,7 @@ plt.ylabel('ADC bit value')
 plt.title('Electrode voltage for a Triangle wave sweep\nInstance set/read rate = %f' % (num_sweeps*len(Vin_sweep)/t_read))
 fig_path = "%s/FIG_TRI_ADCbits.png" % (save_dir)
 figV4.savefig(fig_path, dpi=200)
+plt.close(figV4)
 
 #
 
