@@ -29,13 +29,15 @@ print("Time Stamp:", t_string, "\n\n")
 
 
 
-p = 1
-OP = 4
+p_a1 = 1
+p_a2 = 2
+p_c1 = 3
+OPs = [4]
 
-test_label = 'IO_rand__p%s_Op%d' % (p,OP)
-test_label = 'IO_rand__p%s_Op%d__8_2Meg_%dFadc' % (p,OP, ADCfclk)
-# test_label = 'PKs_rand_s9__p2_p15'
-#test_label = 'PKs_rand_mnt__p%s_Op%d' % (p,OP)
+test_label = 'IO_surf__p%s_Op%d' % (p,OP)
+test_label = 'IO_surf__p%s_Op%d__8_2Meg_%dFadc' % (p,OP, ADCfclk)
+# test_label = 'PKs_surf_s9__p2_p15'
+#test_label = 'PKs_surf_mnt__p%s_Op%d' % (p,OP)
 
 save_dir = "Results/%s/%s_%s" % (d_string, t_string, test_label)
 os.makedirs(save_dir)
@@ -43,88 +45,69 @@ os.makedirs(save_dir)
 # ################################
 
 
-Vin_sweep = np.random.uniform(-3, 3, 800)
+interval = 0.01 # 0.05 #  DAC-QE~0.0005, ADC-QE~0.002V
+x1_max = 3  # 3.5, 3
+Vin = np.arange(-x1_max, x1_max+interval, interval)  # x1_max
+#Vin = np.arange(0, 3+interval, interval)  # x1_max
+#Vin_sweep = np.random.uniform(-x1_max, x1_max, 800)
 
-print("Num write/reads:", num_sweeps*len(Vin_sweep))
+Vin1s = np.arange(-x1_max, x1_max+interval, interval)
+Vin2s = np.arange(-x1_max, x1_max+interval, interval)
+Vo = np.zeros((len(Vin1s), len(Vin2s), len(OPs)))
+Io = np.zeros((len(Vin1s), len(Vin2s), len(OPs)))
 
+Vc = 0
 
+num_sets = len(Vin1s)*len(Vin2s)*len(OPs)
+print("Num write/reads:", num_sets)
 
 obj.ElectrodeState()
 
 input("Press Enter to start sweeps... ")
 
-sweep_Vin = []
-sweep_Vout = []
-sweep_Iout = []
-sweep_dV = []
-sweep_Vdac = []
-sweep_Vadc = []
-sweep_bit_values = []
-
-All_Vin = []
-All_Vout = []
-All_dV = []
-All_Vadc = []
-All_Iout = []
-All_bit_values = []
-
-time_list = []
 tref = time.time()
+pbar = tqdm(total=num_sets)
+for i, Vin1 in enumerate(Vin1s):
+    for j, Vin2 in enumerate(Vin2s):
 
-pbar = tqdm(total=num_sweeps*len(Vin_sweep))
-for sweep in range(num_sweeps):
+        # # Set voltages
+        Vdac1 = obj.SetVoltage(electrode=p_a1, voltage=np.round(Vin1,3))
+        Vdac2 = obj.SetVoltage(electrode=p_a2, voltage=np.round(Vin2,3))
+        Vdac3 = obj.SetVoltage(electrode=p_c1, voltage=np.round(Vc,3))
 
-    Vins = []
-    Vouts = []
-    dVs = []
-    Iouts = []
-    Vdacs = []
-    Vadcs = []
-    ADC_bit_values = []
-    for v in Vin_sweep:
+        # # Read Voltages
+        for k, OP in enumerate(OPs):
+            Iop, Vop, Vadc, adc_bit_value = obj.ReadIV(OP, ret_type=1, nSamples=30)
+            Vo[j, i, k] = Vop
+            Io[j, i, k] = Iop
 
-        v = np.round(v,3)
+            pbar.set_description("V1 %d/ V2 %d | OP %d:  Vo=%.3f, Io=%s" % (Vin1, Vin2, OP, Vop, str(Iop)))
+            pbar.update(1)
 
-        Vdac = obj.SetVoltage(electrode=p, voltage=v)
-        #time.sleep(2)
-        # op = obj.ReadVoltage(OP, debug=0)  # ch0, pin3, op1
-
-        Iop, Vop, Vadc, adc_bit_value = obj.ReadIV(OP, ret_type=1, nSamples=50)  # more samples gives a better/smoother average
-
-        Vins.append(v)
-        Vouts.append(Vop)
-        dVs.append(v-Vop)
-        Iouts.append(Iop)
-        Vdacs.append(Vdac)
-        Vadcs.append(Vadc)
-        ADC_bit_values.append(adc_bit_value)
-        All_Vin.append(v)
-        All_Vout.append(Vop)
-        All_dV.append(v-Vop)
-        All_Vadc.append(Vadc)
-        All_Iout.append(Iop)
-        All_bit_values.append(adc_bit_value)
-        time_list.append(time.time()-tref)
-
-        # print("Vin=", v, " Vout=", Vop, ",  I=", Iop)
-        #input("Press Enter to move to next input V")
-
-        pbar.set_description("%d/%d | Vi=%.3f, Vo=%.3f, Io=%s" % (sweep+1, num_sweeps, v, Vop, str(Iop)))
-        pbar.update(1)
-
-    sweep_Vin.append(Vins)
-    sweep_Vout.append(Vouts)
-    sweep_dV.append(dVs)
-    sweep_Iout.append(Iouts)
-    sweep_Vdac.append(Vdacs)
-    sweep_Vadc.append(Vadcs)
-    sweep_bit_values.append(ADC_bit_values)
+#
 
 pbar.close()
 t_read = time.time()-tref
 obj.fin()
 print("Time to do all readings = %f" % (t_read))
-print("Instance set/read rate = %f" % (num_sweeps*len(Vin_sweep)/t_read))
+print("Instance set/read rate = %f" % (num_sets/t_read))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # save data
 location = "%s/data.hdf5" % (save_dir)
@@ -143,8 +126,6 @@ with h5py.File(location, 'a') as hdf:
 
 #
 
-markers = ['x', '*', 'o', '^', 'd']
-
 figI = plt.figure()
 R_slopes = []
 for s in range(num_sweeps):
@@ -157,7 +138,7 @@ for s in range(num_sweeps):
         print("Sweep %d, Rmaterial ~ %.1f" % (s,Rm))
         R_slopes.append(Rm)
 
-    plt.plot(sweep_dV[s], sweep_Iout[s], marker=markers[s], label=('sweep %d, R=%.1f' % (s, Rm)))
+    plt.plot(sweep_dV[s], sweep_Iout[s], label=('sweep %d, R=%.1f' % (s, Rm)))
 
 plt.legend()
 plt.xlabel('dV')
@@ -169,23 +150,37 @@ figI.savefig(fig_path, dpi=200)
 plt.close(figI)
 
 #
+"""
+figI = plt.figure()
+for s in range(num_sweeps):
+    plt.plot(sweep_Vout[s], sweep_Iout[s], label=('sweep %d' % (s)))
+plt.legend()
+plt.xlabel('Vout')
+plt.ylabel('Iout')
+plt.title('Output Voltage against current')
+plt.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
+fig_path = "%s/FIG_Vout_Iout.png" % (save_dir)
+figI.savefig(fig_path, dpi=200)
+plt.close(figI)
+"""
+#
 
 figV = plt.figure()
 for s in range(num_sweeps):
-    plt.plot(sweep_Vin[s], sweep_Vout[s], marker=markers[s], label=('sweep %d' % (s)))
+    plt.plot(sweep_Vin[s], sweep_Vout[s], label=('sweep %d' % (s)))
 plt.legend()
 plt.xlabel('Vin')
 plt.ylabel('Vout')
 plt.title('Voltage Sweep (Interval= %s)' % (str(interval)))
 fig_path = "%s/FIG_Vin_vs_Vout.png" % (save_dir)
 figV.savefig(fig_path, dpi=200)
-# plt.close(figV)
+plt.close(figV)
 
 #
 
 figV = plt.figure()
 for s in range(num_sweeps):
-    plt.plot(sweep_Vin[s], sweep_bit_values[s], marker=markers[s], label=('sweep %d' % (s)))
+    plt.plot(sweep_Vin[s], sweep_bit_values[s], label=('sweep %d' % (s)))
 plt.legend()
 plt.grid()
 plt.xlabel('Vin')
@@ -204,8 +199,39 @@ plt.ylabel('Vout')
 plt.title('Triangle wave sweep')
 fig_path = "%s/FIG_Vout_continuous.png" % (save_dir)
 figV2.savefig(fig_path, dpi=200)
-plt.close(figV2)
+# plt.close(figV2)
 
+#
+
+figV3 = plt.figure()
+plt.plot(time_list, All_Vout)
+plt.xlabel('Time')
+plt.ylabel('Vout')
+plt.title('Electrode voltage for a Triangle wave sweep')
+fig_path = "%s/FIG_TRI_Vout_vs_time.png" % (save_dir)
+figV3.savefig(fig_path, dpi=200)
+plt.close(figV3)
+#
+
+figV4 = plt.figure()
+plt.plot(All_bit_values)
+plt.xlabel('Instance')
+plt.ylabel('ADC bit value')
+plt.title('Electrode voltage for a Triangle wave sweep\nInstance set/read rate = %f' % (num_sweeps*len(Vin_sweep)/t_read))
+fig_path = "%s/FIG_TRI_ADCbits.png" % (save_dir)
+figV4.savefig(fig_path, dpi=200)
+plt.close(figV4)
+
+#
+
+figVadc = plt.figure()
+plt.plot(time_list, All_Vadc)
+plt.xlabel('Time')
+plt.ylabel('Vadc')
+plt.title('Vadc output for a Triangle wave sweep')
+fig_path = "%s/FIG_TRI_Vadc_vs_time.png" % (save_dir)
+figVadc.savefig(fig_path, dpi=200)
+plt.close(figVadc)
 
 #
 
@@ -213,7 +239,7 @@ plt.close(figV2)
 
 fig = plt.figure()
 for s in range(num_sweeps):
-    plt.plot(sweep_Vdac[s], sweep_Vadc[s], marker=markers[s], label=('sweep %d' % (s)))
+    plt.plot(sweep_Vdac[s], sweep_Vadc[s], label=('sweep %d' % (s)))
 plt.legend()
 plt.xlabel('Vdac')
 plt.ylabel('Vadc')
@@ -224,7 +250,7 @@ plt.close(fig)
 
 fig = plt.figure()
 for s in range(num_sweeps):
-    plt.plot(sweep_Vin[s], sweep_Vdac[s], marker=markers[s], label=('sweep %d' % (s)))
+    plt.plot(sweep_Vin[s], sweep_Vdac[s], label=('sweep %d' % (s)))
 plt.legend()
 plt.xlabel('Vin')
 plt.ylabel('Vdac')
@@ -235,7 +261,7 @@ plt.close(fig)
 
 fig = plt.figure()
 for s in range(num_sweeps):
-    plt.plot(sweep_Vadc[s], sweep_Vout[s], marker=markers[s], label=('sweep %d' % (s)))
+    plt.plot(sweep_Vadc[s], sweep_Vout[s], label=('sweep %d' % (s)))
 plt.legend()
 plt.xlabel('Vadc')
 plt.ylabel('Vout')
