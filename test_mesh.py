@@ -24,11 +24,22 @@ Vo = np.zeros(np.shape(xv))
 print("Shape Vo:", np.shape(Vo))
 for i in range(len(x)):
     for j in range(len(y)):
-        Vo[j, i] = xv[j,i] + yv[j,i]**2
+        # print(xv[j,i], yv[j,i])
+        Vo[j, i] = xv[j,i] + yv[j,i]
 
 fig = plt.figure()
 plt.imshow(Vo, extent=[np.min(x), np.max(x), np.min(y), np.max(y)], origin='lower')
 plt.colorbar()
+
+Vo2 = np.zeros(np.shape(xv))
+for i, Vin1 in enumerate(x):
+    for j, Vin2 in enumerate(y):
+        Vo[j, i] = Vin1 + Vin2
+
+fig = plt.figure()
+plt.imshow(Vo, extent=[np.min(x), np.max(x), np.min(y), np.max(y)], origin='lower')
+plt.colorbar()
+plt.title('2')
 
 plt.show()
 
