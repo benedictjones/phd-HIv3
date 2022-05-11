@@ -27,7 +27,7 @@ print("Date:", d_string)
 t_string = now.strftime("%H_%M_%S")
 print("Time Stamp:", t_string, "\n\n")
 
-
+""" #
 input("Press Enter to togle mux states... ")
 time.sleep(0.5)
 obj.SetElectrodes(electrode3='in', electrode8='in')
@@ -49,14 +49,15 @@ obj.SetElectrodes(electrode11='out', electrode16='out')
 time.sleep(2)
 obj.fin()
 exit()
+# """ 
 
 p = 1
-OP = 3
+OP = 1
 
 test_label = 'IO_sweep__p%s_Op%d' % (p,OP)
 #test_label = 'IO_sweep__p%s_Op%d__8_2Meg_%dFadc' % (p,OP, ADCfclk)
 # test_label = 'PKs_s9__p2_p15'
-#test_label = 'PKs_mnt__p%s_Op%d' % (p,OP)
+test_label = 'PKs_mnt__p%s_Op%d' % (p,OP)
 
 save_dir = "Results/%s/%s_%s" % (d_string, t_string, test_label)
 os.makedirs(save_dir)
@@ -64,8 +65,8 @@ os.makedirs(save_dir)
 # ################################
 
 
-interval = 0.05 # 0.05 #  DAC-QE~0.0005, ADC-QE~0.002V
-x1_max = 2 # 3.5, 3
+interval = 0.025 # 0.05 #  DAC-QE~0.0005, ADC-QE~0.002V
+x1_max = 9 # 3.5, 3
 Vin = np.arange(-x1_max, x1_max+interval, interval)  # x1_max
 #Vin = np.arange(0, 3+interval, interval)  # x1_max
 
