@@ -340,7 +340,7 @@ class hi:
 
         # # check to see if value is already in that state
         if self.MUX_Value[mux] == value:
-            print("Switch is already at set state")
+            print("Switch is already at set state i.e., MUX %s at %d" % (mux, value))
             return 1
 
         # # check to see at least 1 mux is has output selected
@@ -361,6 +361,8 @@ class hi:
         # # Write level to pin
         self.set_pin(pin, value)  # value == level
         self.MUX_Value[mux] = value
+
+        print("Set mux %s to: %d" % (mux, value))
 
         return 0
 

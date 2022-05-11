@@ -11,8 +11,8 @@ import os
 from datetime import datetime
 
 
-ADCfclk = 1000000 # 2000000
-obj = si(Rshunt=100000, ADCspeed=ADCfclk)  # 14000 , 47000
+ADCfclk = 2000000 # 2000000
+obj = si(Rshunt=100000, ADCspeed=ADCfclk)  # 14000 , 47000, , electrode11='in'
 
 Rshunt = obj.Rshunt
 num_sweeps = 2
@@ -28,12 +28,33 @@ t_string = now.strftime("%H_%M_%S")
 print("Time Stamp:", t_string, "\n\n")
 
 
+input("Press Enter to togle mux states... ")
+time.sleep(0.5)
+obj.SetElectrodes(electrode3='in', electrode8='in')
+time.sleep(0.5)
+obj.SetElectrodes(electrode3='out', electrode8='out')
+time.sleep(0.5)
+obj.SetElectrodes(electrode11='in', electrode16='in')
+time.sleep(0.5)
+obj.SetElectrodes(electrode11='out', electrode16='out')
+time.sleep(0.5)
+obj.SetElectrodes(electrode3='in', electrode8='in')
+time.sleep(0.5)
+obj.SetElectrodes(electrode3='out', electrode8='out')
+time.sleep(0.5)
+obj.SetElectrodes(electrode11='in', electrode16='in')
+time.sleep(0.5)
+obj.SetElectrodes(electrode11='out', electrode16='out')
+
+time.sleep(2)
+obj.fin()
+exit()
 
 p = 1
-OP = 4
+OP = 3
 
 test_label = 'IO_sweep__p%s_Op%d' % (p,OP)
-test_label = 'IO_sweep__p%s_Op%d__8_2Meg_%dFadc' % (p,OP, ADCfclk)
+#test_label = 'IO_sweep__p%s_Op%d__8_2Meg_%dFadc' % (p,OP, ADCfclk)
 # test_label = 'PKs_s9__p2_p15'
 #test_label = 'PKs_mnt__p%s_Op%d' % (p,OP)
 
@@ -43,8 +64,8 @@ os.makedirs(save_dir)
 # ################################
 
 
-interval = 0.01 # 0.05 #  DAC-QE~0.0005, ADC-QE~0.002V
-x1_max = 3  # 3.5, 3
+interval = 0.05 # 0.05 #  DAC-QE~0.0005, ADC-QE~0.002V
+x1_max = 2 # 3.5, 3
 Vin = np.arange(-x1_max, x1_max+interval, interval)  # x1_max
 #Vin = np.arange(0, 3+interval, interval)  # x1_max
 
@@ -96,7 +117,7 @@ for sweep in range(num_sweeps):
         #time.sleep(2)
         # op = obj.ReadVoltage(OP, debug=0)  # ch0, pin3, op1
 
-        Iop, Vop, Vadc, adc_bit_value = obj.ReadIV(OP, ret_type=1, nSamples=50)  # more samples gives a better/smoother average
+        Iop, Vop, Vadc, adc_bit_value = obj.ReadIV(OP, ret_type=1, nSamples=100)  # more samples gives a better/smoother average
 
         Vins.append(v)
         Vouts.append(Vop)
