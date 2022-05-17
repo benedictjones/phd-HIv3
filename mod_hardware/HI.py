@@ -132,10 +132,10 @@ class hi:
 
         # # define MUX control pins
         self.MUX = {}
-        self.MUX['IN1'] = 12
-        self.MUX['IN2'] = 16
-        self.MUX['IN3'] = 20
-        self.MUX['IN4'] = 21
+        self.MUX['IN1'] = 22 # 12
+        self.MUX['IN2'] = 5 # 16
+        self.MUX['IN3'] = 6 # 20
+        self.MUX['IN4'] = 13 # 21
 
         # # Assign current states to MUX pins
         self.MUX_Value = {}

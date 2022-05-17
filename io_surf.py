@@ -32,13 +32,13 @@ print("Time Stamp:", t_string, "\n\n")
 
 
 p_a1 = 1
-p_a2 = 2
-p_c1 = 3
+p_a2 = 7
+p_c1 = 4
 OPs = [4]
 
-test_label = 'IO_surf__p%s_Op%d' % (p,OP)
-test_label = 'IO_surf__p%s_Op%d__8_2Meg_%dFadc' % (p,OP, ADCfclk)
-# test_label = 'PKs_surf_s9__p2_p15'
+#test_label = 'IO_surf__p%s_Op%d' % (p,OP)
+#test_label = 'IO_surf__p%s_Op%d__8_2Meg_%dFadc' % (p,OP, ADCfclk)
+test_label = 'PKs_surf_s9_'
 #test_label = 'PKs_surf_mnt__p%s_Op%d' % (p,OP)
 
 save_dir = "Results/%s/%s_%s" % (d_string, t_string, test_label)
@@ -47,15 +47,15 @@ os.makedirs(save_dir)
 # ################################
 
 
-interval = 0.01 # 0.05 #  DAC-QE~0.0005, ADC-QE~0.002V
-x1_max = 3  # 3.5, 3
+interval = 0.25 # 0.05 #  DAC-QE~0.0005, ADC-QE~0.002V
+x1_max = 9  # 3.5, 3
 Vin = np.arange(-x1_max, x1_max+interval, interval)  # x1_max
 #Vin = np.arange(0, 3+interval, interval)  # x1_max
 #Vin_sweep = np.random.uniform(-x1_max, x1_max, 800)
 
 Vin1s = np.arange(-x1_max, x1_max+interval, interval)
 Vin2s = np.arange(-x1_max, x1_max+interval, interval)
-Vcs = [0, 1] # np.arange(-2, 2+1, 1)
+Vcs = [0] # np.arange(-2, 2+1, 1)
 
 
 
@@ -128,7 +128,7 @@ with h5py.File(location, 'a') as hdf:
 
 
 #
-
+exit()
 #
 
 basic_cols = ['#009cff', '#6d55ff', '#ffffff', '#ff6d55','#ff8800']  # pastal orange/red/white/purle/blue

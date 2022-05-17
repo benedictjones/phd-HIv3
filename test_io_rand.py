@@ -31,10 +31,12 @@ print("Time Stamp:", t_string, "\n\n")
 
 p = 1
 OP = 4
+numS = 500
+
 
 test_label = 'IO_rand__p%s_Op%d' % (p,OP)
 test_label = 'IO_rand__p%s_Op%d__8_2Meg_%dFadc' % (p,OP, ADCfclk)
-# test_label = 'PKs_rand_s9__p2_p15'
+test_label = 'PKs_rand__p%s_Op%d' % (p,OP)
 #test_label = 'PKs_rand_mnt__p%s_Op%d' % (p,OP)
 
 save_dir = "Results/%s/%s_%s" % (d_string, t_string, test_label)
@@ -43,7 +45,7 @@ os.makedirs(save_dir)
 # ################################
 
 
-Vin_sweep = np.random.uniform(-3, 3, 800)
+Vin_sweep = np.random.uniform(-9, 9, 500)
 
 print("Num write/reads:", num_sweeps*len(Vin_sweep))
 
@@ -89,7 +91,7 @@ for sweep in range(num_sweeps):
         #time.sleep(2)
         # op = obj.ReadVoltage(OP, debug=0)  # ch0, pin3, op1
 
-        Iop, Vop, Vadc, adc_bit_value = obj.ReadIV(OP, ret_type=1, nSamples=50)  # more samples gives a better/smoother average
+        Iop, Vop, Vadc, adc_bit_value = obj.ReadIV(OP, ret_type=1, nSamples=numS )  # more samples gives a better/smoother average
 
         Vins.append(v)
         Vouts.append(Vop)
@@ -172,11 +174,11 @@ plt.close(figI)
 
 figV = plt.figure()
 for s in range(num_sweeps):
-    plt.plot(sweep_Vin[s], sweep_Vout[s], marker=markers[s], label=('sweep %d' % (s)))
+    plt.scatter(sweep_Vin[s], sweep_Vout[s], marker=markers[s], label=('sweep %d' % (s)))
 plt.legend()
 plt.xlabel('Vin')
 plt.ylabel('Vout')
-plt.title('Voltage Sweep (Interval= %s)' % (str(interval)))
+plt.title('Voltage Sweep (Num Samples=%d)' % (numS))
 fig_path = "%s/FIG_Vin_vs_Vout.png" % (save_dir)
 figV.savefig(fig_path, dpi=200)
 # plt.close(figV)
@@ -185,12 +187,12 @@ figV.savefig(fig_path, dpi=200)
 
 figV = plt.figure()
 for s in range(num_sweeps):
-    plt.plot(sweep_Vin[s], sweep_bit_values[s], marker=markers[s], label=('sweep %d' % (s)))
+    plt.scatter(sweep_Vin[s], sweep_bit_values[s], marker=markers[s], label=('sweep %d' % (s)))
 plt.legend()
 plt.grid()
 plt.xlabel('Vin')
 plt.ylabel('ADC Bits value')
-plt.title('Voltage Sweep (Interval= %s)' % (str(interval)))
+plt.title('Voltage Sweep ')
 fig_path = "%s/FIG_Vin_vs_ADCbits.png" % (save_dir)
 figV.savefig(fig_path, dpi=200)
 plt.close(figV)
@@ -213,7 +215,7 @@ plt.close(figV2)
 
 fig = plt.figure()
 for s in range(num_sweeps):
-    plt.plot(sweep_Vdac[s], sweep_Vadc[s], marker=markers[s], label=('sweep %d' % (s)))
+    plt.scatter(sweep_Vdac[s], sweep_Vadc[s], marker=markers[s], label=('sweep %d' % (s)))
 plt.legend()
 plt.xlabel('Vdac')
 plt.ylabel('Vadc')
@@ -224,7 +226,7 @@ plt.close(fig)
 
 fig = plt.figure()
 for s in range(num_sweeps):
-    plt.plot(sweep_Vin[s], sweep_Vdac[s], marker=markers[s], label=('sweep %d' % (s)))
+    plt.scatter(sweep_Vin[s], sweep_Vdac[s], marker=markers[s], label=('sweep %d' % (s)))
 plt.legend()
 plt.xlabel('Vin')
 plt.ylabel('Vdac')
@@ -235,7 +237,7 @@ plt.close(fig)
 
 fig = plt.figure()
 for s in range(num_sweeps):
-    plt.plot(sweep_Vadc[s], sweep_Vout[s], marker=markers[s], label=('sweep %d' % (s)))
+    plt.scatter(sweep_Vadc[s], sweep_Vout[s], marker=markers[s], label=('sweep %d' % (s)))
 plt.legend()
 plt.xlabel('Vadc')
 plt.ylabel('Vout')

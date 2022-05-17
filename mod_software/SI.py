@@ -277,7 +277,7 @@ class si:
             # # Read Voltage using a "burst and average read"
             Vadc, Vadc_std, bit, bit_std = self.hi.read_adc_Average(chip='ADC1',
                                                                        channel=the_channel,
-                                                                       nAverage=nSamples*attempt,
+                                                                       nAverage=nSamples*attempt**2,
                                                                        bDebug=0, bDebug_graph=debug)
 
             """
@@ -309,9 +309,10 @@ class si:
                 #print(" > Pass! std of ADC output = ", Vstd)
                 break
             elif attempt >= attempts[-1]:
-                print("Warning: Read voltage failed its tests!")
-                self.fin()
-                return
+                Vadc, Vadc_std, bit, bit_std = np.nan, np.nan, np.nan, np.nan
+                #print("Warning: Read voltage failed its tests!")
+                #self.fin()
+                #return
 
         if ret_type == 'raw':
             return Vadc, Vadc_std

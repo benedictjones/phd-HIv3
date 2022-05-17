@@ -12,7 +12,7 @@ from datetime import datetime
 
 
 ADCfclk = 2000000 # 2000000
-obj = si(Rshunt=100000, ADCspeed=ADCfclk)  # 14000 , 47000, , electrode11='in'
+obj = si(Rshunt=100000, ADCspeed=ADCfclk, electrode8='in')  # 14000 , 47000, , electrode11='in'
 
 Rshunt = obj.Rshunt
 num_sweeps = 2
@@ -51,13 +51,16 @@ obj.fin()
 exit()
 # """ 
 
-p = 1
-OP = 1
+p = 7
+OP = 4
+numS = 5 # 30
 
 test_label = 'IO_sweep__p%s_Op%d' % (p,OP)
 #test_label = 'IO_sweep__p%s_Op%d__8_2Meg_%dFadc' % (p,OP, ADCfclk)
 # test_label = 'PKs_s9__p2_p15'
 test_label = 'PKs_mnt__p%s_Op%d' % (p,OP)
+
+#test_label = 'NWs_mnt_clip__p%s_Op%d' % (p,OP)
 
 save_dir = "Results/%s/%s_%s" % (d_string, t_string, test_label)
 os.makedirs(save_dir)
@@ -118,7 +121,7 @@ for sweep in range(num_sweeps):
         #time.sleep(2)
         # op = obj.ReadVoltage(OP, debug=0)  # ch0, pin3, op1
 
-        Iop, Vop, Vadc, adc_bit_value = obj.ReadIV(OP, ret_type=1, nSamples=100)  # more samples gives a better/smoother average
+        Iop, Vop, Vadc, adc_bit_value = obj.ReadIV(OP, ret_type=1, nSamples=numS)  # more samples gives a better/smoother average
 
         Vins.append(v)
         Vouts.append(Vop)
@@ -217,7 +220,7 @@ for s in range(num_sweeps):
 plt.legend()
 plt.xlabel('Vin')
 plt.ylabel('Vout')
-plt.title('Voltage Sweep (Interval= %s)' % (str(interval)))
+plt.title('Voltage Sweep (Interval= %s, Sample Size=%d)' % (str(interval), numS))
 fig_path = "%s/FIG_Vin_vs_Vout.png" % (save_dir)
 figV.savefig(fig_path, dpi=200)
 plt.close(figV)
