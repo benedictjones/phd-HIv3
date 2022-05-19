@@ -9,6 +9,8 @@ from matplotlib.colors import LinearSegmentedColormap  # allows the creation of 
 
 from scipy.stats import linregress
 
+from _norm_color import MidpointNormalize
+
 import os
 from datetime import datetime
 
@@ -55,7 +57,7 @@ Vin = np.arange(-x1_max, x1_max+interval, interval)  # x1_max
 
 Vin1s = np.arange(-x1_max, x1_max+interval, interval)
 Vin2s = np.arange(-x1_max, x1_max+interval, interval)
-Vcs = [0] # np.arange(-2, 2+1, 1)
+Vcs = [0, 1] # np.arange(-2, 2+1, 1)
 
 
 
@@ -69,15 +71,20 @@ input("Press Enter to start sweeps... ")
 
 res = {}
 res['extent'] = [np.min(Vin1s), np.max(Vin1s), np.min(Vin2s), np.max(Vin2s)]
+res['OPs'] = OPs
+for p, Vlist in enumerate([Vin1s, Vin2s, Vcs]):
+    res['Vin%ds' % (p+1)] = Vlist
+res['Vcs'] = Vcs
+res['IO'] = {}
 
 tref = time.time()
 pbar = tqdm(total=num_sets)
 
-for Vc in Vcs:
+Vo = np.zeros((len(Vin1s), len(Vin2s), len(Vcs), len(OPs)))
+Io = np.zeros((len(Vin1s), len(Vin2s), len(Vcs), len(OPs)))
+Bo = np.zeros((len(Vin1s), len(Vin2s), len(Vcs), len(OPs)))
 
-    Vo = np.zeros((len(Vin1s), len(Vin2s), len(OPs)))
-    Io = np.zeros((len(Vin1s), len(Vin2s), len(OPs)))
-    Bo = np.zeros((len(Vin1s), len(Vin2s), len(OPs)))
+for c, Vc in enumerate(Vcs):
 
     for i, Vin1 in enumerate(Vin1s):
         for j, Vin2 in enumerate(Vin2s):
@@ -90,20 +97,15 @@ for Vc in Vcs:
             Vdac3 = obj.SetVoltage(electrode=p_c1, voltage=np.round(Vc,3))
 
             # # Read Voltages
-            for k, OP in enumerate(OPs):
+            for o, OP in enumerate(OPs):
                 Iop, Vop, Vadc, adc_bit_value = obj.ReadIV(OP, ret_type=1, nSamples=30)
-                Vo[j, i, k] = Vop
-                Io[j, i, k] = Iop
-                Bo[j, i, k] = adc_bit_value
+                Vo[j, i, c, o] = Vop
+                Io[j, i, c, o] = Iop
+                Bo[j, i, c, o] = adc_bit_value
 
                 pbar.set_description("Vc %.2f, V1 %.2f/ V2 %.2f | OP %d:  Vo=%.3f, Io=%s" % (Vc, Vin1, Vin2, OP, Vop, str(Iop)))
                 pbar.update(1)
 
-    res['%.3f' % Vc]['Vo'] = Vo
-    res['%.3f' % Vc]['Io'] = Io
-    res['%.3f' % Vc]['Bo'] = Bo
-
-#
 
 pbar.close()
 t_read = time.time()-tref
@@ -112,50 +114,75 @@ print("Time to do all readings = %f" % (t_read))
 print("Instance set/read rate = %f" % (num_sets/t_read))
 
 
-# save data
+# # Add to save dict
+for o, OP in enumerate(OPs):
+    res['IO']['OP%d' % (OP)] = {}
+    res['IO']['OP%d' % (OP)]['Vo'] = Vo[:, :, :, o]
+    res['IO']['OP%d' % (OP)]['Io'] = Io[:, :, :, o]
+    res['IO']['OP%d' % (OP)]['Bo'] = Bo[:, :, :, o]
+
+res['lims_Vo'] = [np.min(Vo), np.min(Vo)]
+res['lims_Io'] = [np.min(Io), np.min(Io)]
+res['lims_Bo'] = [np.min(Bo), np.min(Bo)]
+
+#
+
+# # save data to file
 location = "%s/data.hdf5" % (save_dir)
 with h5py.File(location, 'a') as hdf:
-    G = hdf.create_group("IO")
-
     for k, v in res.items():
 
         if isinstance(v, dict):
-            G_sub = G.create_group(k)
+            G_sub = hdf.create_group(k)
             for k2, v2 in res[k].items():
-                G_sub.create_dataset(k2, data=v2)
+                if isinstance(v, dict):
+                    G_sub2 = G_sub.create_group(k)
+                    for k3, v3 in res[k][k2].items():
+                        G_sub2.create_dataset(k3, data=v3)
+                else:
+                    G_sub.create_dataset(k2, data=v2)
         else:
-            G.create_dataset(k, data=v)
+            hdf.create_dataset(k, data=v)
 
 
 #
-exit()
+
+# exit()
+
 #
 
 basic_cols = ['#009cff', '#6d55ff', '#ffffff', '#ff6d55','#ff8800']  # pastal orange/red/white/purle/blue
 my_cmap = LinearSegmentedColormap.from_list('mycmap', basic_cols)
 
-fig, ax = plt.subplots(nrows=1, ncols=len(Vcs),  sharey='row')
-for c, Vc in enumerate(Vcs):
-    im = ax[c].imshow(res['%.3f' % Vc]['Vo'], origin="lower", extent=res['extent'],
-                      # vmin=vMIN, vmax=vMAX,
-                      cmap=my_cmap)
 
-    ax[c].set_title("Vc=%.3f" % (Vc))
+fig, ax = plt.subplots(int(len(res['OPS'])), int(len(Vcs)), sharex='col', sharey='row', squeeze=False)
+for o, op in enumerate(res['OPS']):
 
-    if c == 0:
-        ax[c].set_ylabel("Vin2")
-    ax[c].set_xlabel("Vin1")
+    for c, Vc in enumerate(Vcs):
 
-fig.colorbar(im, orientation='horizontal')
+        im = ax[o,c].imshow(res['IO']['OP%d' % (op)]['Vo'][:,:,c], origin="lower", extent=res['extent'],
+                          # vmin=res['lims_Vo'][0], vmax=res['lims_Vo'][1],
+                          norm=MidpointNormalize(midpoint=0.,vmin=res['lims_Vo'][0], vmax=['lims_Vo'][1]),
+                          cmap=my_cmap)
+
+        ax[o,c].set_title("OP %d, Vc=%.3f" % (op, Vc))
+
+        if c == 0:
+            ax[o,c].set_ylabel("Vin2")
+
+        if o == (len(res['OPS'])-1):
+            ax[o,c].set_xlabel("Vin1")
 
 
-fig_path = "%s/FIG_surf.png" % (save_dir)
+cbar = fig.colorbar(im, orientation='horizontal')
+cbar.set_label('Vo', fontsize=10)
+
+fig_path = "%s/FIG_surf_OP.png" % (save_dir)
 fig.savefig(fig_path, dpi=250)
 plt.close(fig)
 
-
-# plt.show()
-# plt.close('all')
+plt.show()
+plt.close('all')
 
 #
 
