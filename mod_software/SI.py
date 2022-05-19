@@ -301,7 +301,7 @@ class si:
             if bit_std <= 4:
                 success = success + 1
             else:
-                print("\nAttempt %d Read voltage failed std quantisation noise check... (bit std=%.4f)" % (attempt, bit_std))
+                print("\n  Attempt %d Read voltage failed std quantisation noise check... (bit std=%.4f)" % (attempt, bit_std))
                 #print(" > std of ADC output = ", Vstd)
             #"""
 
@@ -309,7 +309,8 @@ class si:
                 #print(" > Pass! std of ADC output = ", Vstd)
                 break
             elif attempt >= attempts[-1]:
-                Vadc, Vadc_std, bit, bit_std = np.nan, np.nan, np.nan, np.nan
+                #Vadc, Vadc_std, bit, bit_std = np.nan, np.nan, np.nan, np.nan
+                break
                 #print("Warning: Read voltage failed its tests!")
                 #self.fin()
                 #return

@@ -29,9 +29,9 @@ print("Time Stamp:", t_string, "\n\n")
 
 
 
-p = 1
+p = 9
 OP = 4
-numS = 500
+numS = 30
 
 
 test_label = 'IO_rand__p%s_Op%d' % (p,OP)

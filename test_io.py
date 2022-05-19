@@ -12,7 +12,7 @@ from datetime import datetime
 
 
 ADCfclk = 2000000 # 2000000
-obj = si(Rshunt=100000, ADCspeed=ADCfclk, electrode8='in')  # 14000 , 47000, , electrode11='in'
+obj = si(Rshunt=100000, ADCspeed=ADCfclk)  # 14000 , 47000, , electrode11='in'
 
 Rshunt = obj.Rshunt
 num_sweeps = 2
@@ -51,9 +51,9 @@ obj.fin()
 exit()
 # """ 
 
-p = 7
-OP = 4
-numS = 5 # 30
+p = 1
+OP = 2 # 4
+numS = 30 # 30
 
 test_label = 'IO_sweep__p%s_Op%d' % (p,OP)
 #test_label = 'IO_sweep__p%s_Op%d__8_2Meg_%dFadc' % (p,OP, ADCfclk)
@@ -61,6 +61,8 @@ test_label = 'IO_sweep__p%s_Op%d' % (p,OP)
 test_label = 'PKs_mnt__p%s_Op%d' % (p,OP)
 
 #test_label = 'NWs_mnt_clip__p%s_Op%d' % (p,OP)
+test_label = 'NWs_' 
+test_label = 'CustomDRN__Op%d' % (OP)
 
 save_dir = "Results/%s/%s_%s" % (d_string, t_string, test_label)
 os.makedirs(save_dir)
@@ -73,9 +75,14 @@ x1_max = 9 # 3.5, 3
 Vin = np.arange(-x1_max, x1_max+interval, interval)  # x1_max
 #Vin = np.arange(0, 3+interval, interval)  # x1_max
 
+direction = 'random' # forward, backward, random
 
-Vin_sweep = np.concatenate((Vin, np.flip(Vin)))
-# Vin_sweep = np.random.uniform(-x1_max, x1_max, 800)
+if direction == 'forward' :
+    Vin_sweep = np.concatenate((Vin, np.flip(Vin)))
+elif direction == 'backward' :
+    Vin_sweep = np.concatenate((np.flip(Vin), Vin))
+elif direction == 'random':
+    Vin_sweep = np.random.uniform(-x1_max, x1_max, 800)
 
 print("Num write/reads:", num_sweeps*len(Vin_sweep))
 
@@ -214,22 +221,30 @@ plt.close(figI)
 """
 #
 
+markers = ['x', '*', 'o', '^', 'd']
+
 figV = plt.figure()
 for s in range(num_sweeps):
-    plt.plot(sweep_Vin[s], sweep_Vout[s], label=('sweep %d' % (s)))
+    if direction == 'random':
+        plt.scatter(sweep_Vin[s], sweep_Vout[s], marker=markers[s],  label=('sweep %d' % (s)))
+    else:
+        plt.plot(sweep_Vin[s], sweep_Vout[s], label=('sweep %d' % (s)))
 plt.legend()
 plt.xlabel('Vin')
 plt.ylabel('Vout')
-plt.title('Voltage Sweep (Interval= %s, Sample Size=%d)' % (str(interval), numS))
+plt.title('Voltage Sweep\n(Interval= %s, Sample Size=%d, type=%s)' % (str(interval), numS, direction))
 fig_path = "%s/FIG_Vin_vs_Vout.png" % (save_dir)
 figV.savefig(fig_path, dpi=200)
-plt.close(figV)
+# plt.close(figV)
 
 #
 
 figV = plt.figure()
 for s in range(num_sweeps):
-    plt.plot(sweep_Vin[s], sweep_bit_values[s], label=('sweep %d' % (s)))
+    if direction == 'random':
+        plt.scatter(sweep_Vin[s], sweep_bit_values[s], marker=markers[s], label=('sweep %d' % (s)))
+    else:
+        plt.plot(sweep_Vin[s], sweep_bit_values[s], label=('sweep %d' % (s)))
 plt.legend()
 plt.grid()
 plt.xlabel('Vin')
@@ -241,26 +256,29 @@ plt.close(figV)
 
 #
 
-figV2 = plt.figure()
-plt.plot(All_Vout)
-plt.xlabel('Instance')
-plt.ylabel('Vout')
-plt.title('Triangle wave sweep')
-fig_path = "%s/FIG_Vout_continuous.png" % (save_dir)
-figV2.savefig(fig_path, dpi=200)
-# plt.close(figV2)
+if direction != 'random':
+    figV2 = plt.figure()
+    plt.plot(All_Vout)
+    plt.xlabel('Instance')
+    plt.ylabel('Vout')
+    plt.title('Triangle wave sweep')
+    fig_path = "%s/FIG_Vout_continuous.png" % (save_dir)
+    figV2.savefig(fig_path, dpi=200)
+    plt.close(figV2)
 
 #
 
-figV3 = plt.figure()
-plt.plot(time_list, All_Vout)
-plt.xlabel('Time')
-plt.ylabel('Vout')
-plt.title('Electrode voltage for a Triangle wave sweep')
-fig_path = "%s/FIG_TRI_Vout_vs_time.png" % (save_dir)
-figV3.savefig(fig_path, dpi=200)
-plt.close(figV3)
+if direction != 'random':
+    figV3 = plt.figure()
+    plt.plot(time_list, All_Vout)
+    plt.xlabel('Time')
+    plt.ylabel('Vout')
+    plt.title('Electrode voltage for a Triangle wave sweep')
+    fig_path = "%s/FIG_TRI_Vout_vs_time.png" % (save_dir)
+    figV3.savefig(fig_path, dpi=200)
+    plt.close(figV3)
 #
+
 
 figV4 = plt.figure()
 plt.plot(All_bit_values)
@@ -273,14 +291,15 @@ plt.close(figV4)
 
 #
 
-figVadc = plt.figure()
-plt.plot(time_list, All_Vadc)
-plt.xlabel('Time')
-plt.ylabel('Vadc')
-plt.title('Vadc output for a Triangle wave sweep')
-fig_path = "%s/FIG_TRI_Vadc_vs_time.png" % (save_dir)
-figVadc.savefig(fig_path, dpi=200)
-plt.close(figVadc)
+if direction != 'random':
+    figVadc = plt.figure()
+    plt.plot(time_list, All_Vadc)
+    plt.xlabel('Time')
+    plt.ylabel('Vadc')
+    plt.title('Vadc output for a Triangle wave sweep')
+    fig_path = "%s/FIG_TRI_Vadc_vs_time.png" % (save_dir)
+    figVadc.savefig(fig_path, dpi=200)
+    plt.close(figVadc)
 
 #
 
@@ -288,7 +307,10 @@ plt.close(figVadc)
 
 fig = plt.figure()
 for s in range(num_sweeps):
-    plt.plot(sweep_Vdac[s], sweep_Vadc[s], label=('sweep %d' % (s)))
+    if direction == 'random':
+        plt.scatter(sweep_Vdac[s], sweep_Vadc[s], marker=markers[s], label=('sweep %d' % (s)))
+    else:
+        plt.plot(sweep_Vdac[s], sweep_Vadc[s], label=('sweep %d' % (s)))
 plt.legend()
 plt.xlabel('Vdac')
 plt.ylabel('Vadc')
@@ -299,7 +321,10 @@ plt.close(fig)
 
 fig = plt.figure()
 for s in range(num_sweeps):
-    plt.plot(sweep_Vin[s], sweep_Vdac[s], label=('sweep %d' % (s)))
+    if direction == 'random':
+        plt.scatter(sweep_Vin[s], sweep_Vdac[s], marker=markers[s], label=('sweep %d' % (s)))
+    else:
+        plt.plot(sweep_Vin[s], sweep_Vdac[s], label=('sweep %d' % (s)))
 plt.legend()
 plt.xlabel('Vin')
 plt.ylabel('Vdac')
@@ -310,7 +335,10 @@ plt.close(fig)
 
 fig = plt.figure()
 for s in range(num_sweeps):
-    plt.plot(sweep_Vadc[s], sweep_Vout[s], label=('sweep %d' % (s)))
+    if direction == 'random':
+        plt.scatter(sweep_Vadc[s], sweep_Vout[s], marker=markers[s], label=('sweep %d' % (s)))
+    else:
+        plt.plot(sweep_Vadc[s], sweep_Vout[s], label=('sweep %d' % (s)))
 plt.legend()
 plt.xlabel('Vadc')
 plt.ylabel('Vout')

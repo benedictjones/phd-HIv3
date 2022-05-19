@@ -1,0 +1,11 @@
+Press Enter to start sweeps... 
+Vc 8.00, V1 9.00/ V2 9.00 | OP 4:  Vo=5.413, Io=5.413288e-05: 100%|██████████████| 13690/13690 [00:22<00:00, 610.74it/s]
+Shutting down hardware and R-Pi connection.
+HI is now shut down via the R-Pi connection.
+HI object delected, re-initialise SI to start up again.
+Time to do all readings = 22.422133
+Instance set/read rate = 610.557442
+Vlims: -7.972708 7.526185
+
+
+one iteration is 3 sets and 2 reads.

@@ -34,14 +34,17 @@ print("Time Stamp:", t_string, "\n\n")
 
 
 p_a1 = 1
-p_a2 = 7
-p_c1 = 4
-OPs = [4]
+p_a2 = 4
+p_c1 = 9
+OPs = [2,4]
 
 #test_label = 'IO_surf__p%s_Op%d' % (p,OP)
 #test_label = 'IO_surf__p%s_Op%d__8_2Meg_%dFadc' % (p,OP, ADCfclk)
 test_label = 'PKs_surf_s9_'
 #test_label = 'PKs_surf_mnt__p%s_Op%d' % (p,OP)
+
+test_label = 'NWs_surf_'
+test_label = 'CustomDRN_surf_'
 
 save_dir = "Results/%s/%s_%s" % (d_string, t_string, test_label)
 os.makedirs(save_dir)
@@ -49,7 +52,7 @@ os.makedirs(save_dir)
 # ################################
 
 
-interval = 0.25 # 0.05 #  DAC-QE~0.0005, ADC-QE~0.002V
+interval = 0.5 # 0.25 # 0.05 #  DAC-QE~0.0005, ADC-QE~0.002V
 x1_max = 9  # 3.5, 3
 Vin = np.arange(-x1_max, x1_max+interval, interval)  # x1_max
 #Vin = np.arange(0, 3+interval, interval)  # x1_max
@@ -57,7 +60,7 @@ Vin = np.arange(-x1_max, x1_max+interval, interval)  # x1_max
 
 Vin1s = np.arange(-x1_max, x1_max+interval, interval)
 Vin2s = np.arange(-x1_max, x1_max+interval, interval)
-Vcs = [0, 1] # np.arange(-2, 2+1, 1)
+Vcs = [-8, -4, 0, 4, 8] # np.arange(-2, 2+1, 1)
 
 
 
@@ -98,7 +101,7 @@ for c, Vc in enumerate(Vcs):
 
             # # Read Voltages
             for o, OP in enumerate(OPs):
-                Iop, Vop, Vadc, adc_bit_value = obj.ReadIV(OP, ret_type=1, nSamples=30)
+                Iop, Vop, Vadc, adc_bit_value = obj.ReadIV(OP, ret_type=1, nSamples=3)
                 Vo[j, i, c, o] = Vop
                 Io[j, i, c, o] = Iop
                 Bo[j, i, c, o] = adc_bit_value
@@ -121,27 +124,33 @@ for o, OP in enumerate(OPs):
     res['IO']['OP%d' % (OP)]['Io'] = Io[:, :, :, o]
     res['IO']['OP%d' % (OP)]['Bo'] = Bo[:, :, :, o]
 
-res['lims_Vo'] = [np.min(Vo), np.min(Vo)]
-res['lims_Io'] = [np.min(Io), np.min(Io)]
-res['lims_Bo'] = [np.min(Bo), np.min(Bo)]
+res['lims_Vo'] = [np.min(Vo), np.max(Vo)]
+res['lims_Io'] = [np.min(Io), np.max(Io)]
+res['lims_Bo'] = [np.min(Bo), np.max(Bo)]
 
 #
 
 # # save data to file
 location = "%s/data.hdf5" % (save_dir)
 with h5py.File(location, 'a') as hdf:
+    
     for k, v in res.items():
-
+        #print(k)
+        
         if isinstance(v, dict):
             G_sub = hdf.create_group(k)
             for k2, v2 in res[k].items():
-                if isinstance(v, dict):
-                    G_sub2 = G_sub.create_group(k)
+                #print(k, "layer 2:", k2)
+                if isinstance(v2, dict):
+                    G_sub2 = G_sub.create_group(k2)
                     for k3, v3 in res[k][k2].items():
+                        #print("created:", k, " ,layer 2:", k2, " ,layer 3:", k3)
                         G_sub2.create_dataset(k3, data=v3)
                 else:
+                    #print("  > created L2:", k, k2)
                     G_sub.create_dataset(k2, data=v2)
         else:
+            #print("  > created L1:", k)
             hdf.create_dataset(k, data=v)
 
 
@@ -151,34 +160,41 @@ with h5py.File(location, 'a') as hdf:
 
 #
 
+minn = res['lims_Vo'][0]
+maxx = res['lims_Vo'][1]
+print("Vlims:", minn, maxx)
+
 basic_cols = ['#009cff', '#6d55ff', '#ffffff', '#ff6d55','#ff8800']  # pastal orange/red/white/purle/blue
 my_cmap = LinearSegmentedColormap.from_list('mycmap', basic_cols)
 
 
-fig, ax = plt.subplots(int(len(res['OPS'])), int(len(Vcs)), sharex='col', sharey='row', squeeze=False)
-for o, op in enumerate(res['OPS']):
+w = int(len(Vcs))*2.5
+h = int(len(res['OPs']))*3
+fig, axs = plt.subplots(int(len(res['OPs'])), int(len(Vcs)), sharex='col', sharey='row', squeeze=False, figsize=(w,h))
+for o, op in enumerate(res['OPs']):
 
     for c, Vc in enumerate(Vcs):
 
-        im = ax[o,c].imshow(res['IO']['OP%d' % (op)]['Vo'][:,:,c], origin="lower", extent=res['extent'],
-                          # vmin=res['lims_Vo'][0], vmax=res['lims_Vo'][1],
-                          norm=MidpointNormalize(midpoint=0.,vmin=res['lims_Vo'][0], vmax=['lims_Vo'][1]),
-                          cmap=my_cmap)
+        im = axs[o,c].imshow(res['IO']['OP%d' % (op)]['Vo'][:,:,c], origin="lower", extent=res['extent'],
+                            #vmin=res['lims_Vo'][0], vmax=res['lims_Vo'][1],
+                            norm=MidpointNormalize(midpoint=0, vmin=minn, vmax=maxx),
+                            cmap=my_cmap)
 
-        ax[o,c].set_title("OP %d, Vc=%.3f" % (op, Vc))
+        axs[o,c].set_title("OP %d, Vc=%.3f" % (op, Vc))
 
         if c == 0:
-            ax[o,c].set_ylabel("Vin2")
+            axs[o,c].set_ylabel("Vin2")
 
-        if o == (len(res['OPS'])-1):
-            ax[o,c].set_xlabel("Vin1")
+        if o == (len(res['OPs'])-1):
+            axs[o,c].set_xlabel("Vin1")
 
 
-cbar = fig.colorbar(im, orientation='horizontal')
+# fig.subplots_adjust(bottom=0.2)
+cbar = fig.colorbar(im, ax=axs[:,:] , shrink=0.8, location='bottom') # ,orientation='horizontal'
 cbar.set_label('Vo', fontsize=10)
 
 fig_path = "%s/FIG_surf_OP.png" % (save_dir)
-fig.savefig(fig_path, dpi=250)
+fig.savefig(fig_path, dpi=300)
 plt.close(fig)
 
 plt.show()
