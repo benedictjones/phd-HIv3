@@ -504,4 +504,35 @@ class si:
 
     #
 
+    #
+
+    #
+
+    def sweep_Vset(self, electrode=1, voltage=0, interval_frac=5):
+        """
+        Sweep up to the desired voltage from zero.
+        """
+
+        interval = voltage/interval_frac
+        for v in np.arange(0, voltage+interval, interval):
+            Vdac = self.SetVoltage(electrode, voltage)
+        self.SetVoltage(electrode, 0)
+
+        return Vdac
+
+    #
+
+    def zeroed_Vset(self, electrode=1, voltage=0):
+        """
+        Set the desired voltage after zero.
+        """
+        
+        self.SetVoltage(electrode, 0)
+        Vdac = self.SetVoltage(electrode, voltage)
+        self.SetVoltage(electrode, 0)
+
+        return Vdac
+
+    #
+
 # fin
