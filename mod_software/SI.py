@@ -513,10 +513,11 @@ class si:
         Sweep up to the desired voltage from zero.
         """
 
+        
         interval = voltage/interval_frac
         for v in np.arange(0, voltage+interval, interval):
             Vdac = self.SetVoltage(electrode, voltage)
-        self.SetVoltage(electrode, 0)
+        # self.SetVoltage(electrode, 0)
 
         return Vdac
 
@@ -529,7 +530,7 @@ class si:
         
         self.SetVoltage(electrode, 0)
         Vdac = self.SetVoltage(electrode, voltage)
-        self.SetVoltage(electrode, 0)
+        # self.SetVoltage(electrode, 0)
 
         return Vdac
 

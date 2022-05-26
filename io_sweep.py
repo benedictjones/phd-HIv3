@@ -15,7 +15,7 @@ ADCfclk = 2000000 # 2000000
 obj = si(Rshunt=100000, ADCspeed=ADCfclk)  # 14000 , 47000, , electrode11='in'
 
 Rshunt = obj.Rshunt
-num_sweeps = 2
+num_sweeps = 10
 
 
 # #################################
@@ -30,8 +30,8 @@ print("Time Stamp:", t_string, "\n\n")
 
 
 p = 1
-OP = 2 # 4
-numS = 30 # 30
+OP =  4 # 4
+numS = 60 # 30
 
 test_label = 'IO_sweep__p%s_Op%d' % (p,OP)
 #test_label = 'IO_sweep__p%s_Op%d__8_2Meg_%dFadc' % (p,OP, ADCfclk)
@@ -39,8 +39,8 @@ test_label = 'IO_sweep__p%s_Op%d' % (p,OP)
 test_label = 'PKs_mnt__p%s_Op%d' % (p,OP)
 
 #test_label = 'NWs_mnt_clip__p%s_Op%d' % (p,OP)
-test_label = 'NWs_'
-test_label = 'CustomDRN__Op%d' % (OP)
+#test_label = 'NWs_'
+#test_label = 'CustomDRN__Op%d' % (OP)
 
 save_dir = "Results/%s/%s_%s" % (d_string, t_string, test_label)
 os.makedirs(save_dir)
@@ -50,10 +50,14 @@ os.makedirs(save_dir)
 
 interval = 0.025 # 0.05 #  DAC-QE~0.0005, ADC-QE~0.002V
 x1_max = 9 # 3.5, 3
-Vin = np.arange(-x1_max, x1_max+interval, interval)  # x1_max
+Vin = np.arange(-x1_max, x1_max+interval, interval)  # neg to pos
+
+Vin = np.arange(0, x1_max+interval, interval)  # zero to pos
+Vin = np.arange(-x1_max, 0+interval, interval)  # neg to zero
+
 #Vin = np.arange(0, 3+interval, interval)  # x1_max
 
-direction = 'random' # forward, backward, random
+direction = 'backward_single' # forward, backward, random
 
 if direction == 'forward' :
     Vin_sweep = np.concatenate((Vin, np.flip(Vin)))
@@ -61,7 +65,12 @@ elif direction == 'backward' :
     Vin_sweep = np.concatenate((np.flip(Vin), Vin))
 elif direction == 'random':
     Vin_sweep = np.random.uniform(-x1_max, x1_max, 800)
-
+    
+elif direction == 'forward_single':
+    Vin_sweep = Vin
+elif direction == 'backward_single':
+    Vin_sweep = np.flip(Vin)
+    
 print("Num write/reads:", num_sweeps*len(Vin_sweep))
 
 
