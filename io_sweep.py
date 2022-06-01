@@ -12,10 +12,11 @@ from datetime import datetime
 
 
 ADCfclk = 2000000 # 2000000
-obj = si(Rshunt=100000, ADCspeed=ADCfclk)  # 14000 , 47000, , electrode11='in'
+Rsh = 470 # 100000, 470
+obj = si(Rshunt=Rsh, ADCspeed=ADCfclk)  # 14000 , 47000, , electrode11='in'
 
 Rshunt = obj.Rshunt
-num_sweeps = 10
+num_sweeps = 2
 
 
 # #################################
@@ -31,7 +32,7 @@ print("Time Stamp:", t_string, "\n\n")
 
 p = 1
 OP =  4 # 4
-numS = 60 # 30
+numS = 10 # 30
 
 test_label = 'IO_sweep__p%s_Op%d' % (p,OP)
 #test_label = 'IO_sweep__p%s_Op%d__8_2Meg_%dFadc' % (p,OP, ADCfclk)
@@ -42,22 +43,24 @@ test_label = 'PKs_mnt__p%s_Op%d' % (p,OP)
 #test_label = 'NWs_'
 #test_label = 'CustomDRN__Op%d' % (OP)
 
+test_label = 'Custom_LDRN'
+
 save_dir = "Results/%s/%s_%s" % (d_string, t_string, test_label)
 os.makedirs(save_dir)
 
 # ################################
 
 
-interval = 0.025 # 0.05 #  DAC-QE~0.0005, ADC-QE~0.002V
+interval = 0.025 # 0.05, 0.025 #  DAC-QE~0.0005, ADC-QE~0.002V
 x1_max = 9 # 3.5, 3
 Vin = np.arange(-x1_max, x1_max+interval, interval)  # neg to pos
 
-Vin = np.arange(0, x1_max+interval, interval)  # zero to pos
-Vin = np.arange(-x1_max, 0+interval, interval)  # neg to zero
+#Vin = np.arange(0, x1_max+interval, interval)  # zero to pos
+#Vin = np.arange(-x1_max, 0+interval, interval)  # neg to zero
 
 #Vin = np.arange(0, 3+interval, interval)  # x1_max
 
-direction = 'backward_single' # forward, backward, random
+direction = 'random' # forward, backward, random
 
 if direction == 'forward' :
     Vin_sweep = np.concatenate((Vin, np.flip(Vin)))
@@ -169,6 +172,10 @@ with h5py.File(location, 'a') as hdf:
 
 #
 
+markers = ['x', '*', 'o', '^', 'd']
+
+#
+
 figI = plt.figure()
 R_slopes = []
 for s in range(num_sweeps):
@@ -181,7 +188,11 @@ for s in range(num_sweeps):
         print("Sweep %d, Rmaterial ~ %.1f" % (s,Rm))
         R_slopes.append(Rm)
 
-    plt.plot(sweep_dV[s], sweep_Iout[s], label=('sweep %d, R=%.1f' % (s, Rm)))
+    if direction == 'random':
+        plt.scatter(sweep_dV[s], sweep_Iout[s], marker=markers[s], label=('sweep %d, R=%.1f' % (s, Rm)))
+    else:
+        plt.plot(sweep_dV[s], sweep_Iout[s],label=('sweep %d, R=%.1f' % (s, Rm)))
+    
 
 plt.legend()
 plt.xlabel('dV')
@@ -208,7 +219,7 @@ plt.close(figI)
 """
 #
 
-markers = ['x', '*', 'o', '^', 'd']
+
 
 figV = plt.figure()
 for s in range(num_sweeps):

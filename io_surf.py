@@ -19,7 +19,7 @@ ADCfclk = 1000000 # 2000000
 obj = si(Rshunt=100000, ADCspeed=ADCfclk)  # 14000 , 47000
 
 Rshunt = obj.Rshunt
-num_sweeps = 2
+num_sweeps = 1
 
 
 # #################################
@@ -34,9 +34,9 @@ print("Time Stamp:", t_string, "\n\n")
 
 
 p_a1 = 1
-p_a2 = 4
-p_c1 = 9
-OPs = [2,4]
+p_a2 = 9
+p_c1 = 2
+OPs = [2,3,4]
 
 #test_label = 'IO_surf__p%s_Op%d' % (p,OP)
 #test_label = 'IO_surf__p%s_Op%d__8_2Meg_%dFadc' % (p,OP, ADCfclk)
@@ -44,7 +44,7 @@ test_label = 'PKs_surf_s9_'
 #test_label = 'PKs_surf_mnt__p%s_Op%d' % (p,OP)
 
 test_label = 'NWs_surf_'
-test_label = 'CustomDRN_surf_'
+test_label = 'Custom_LDRN_surf_'
 
 save_dir = "Results/%s/%s_%s" % (d_string, t_string, test_label)
 os.makedirs(save_dir)
@@ -52,7 +52,7 @@ os.makedirs(save_dir)
 # ################################
 
 
-interval = 0.5 # 0.25 # 0.05 #  DAC-QE~0.0005, ADC-QE~0.002V
+interval = 0.1 # 0.25 # 0.05 #  DAC-QE~0.0005, ADC-QE~0.002V
 x1_max = 9  # 3.5, 3
 Vin = np.arange(-x1_max, x1_max+interval, interval)  # x1_max
 #Vin = np.arange(0, 3+interval, interval)  # x1_max
