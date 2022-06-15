@@ -622,12 +622,12 @@ class si:
 
     #
 
-    def SetV_spike_train(self, input_pairs, ops=[], spike_voltage=5):
+    def SetV_spike_train(self, input_pairs, ops=[], spike_voltage=8, encoding='rate'):
         """
         Convert the inputs into a spike train.
         """
 
-        sobj = spike_trains(encoding='rate')  # rate, temporal
+        sobj = spike_trains(encoding=encoding)  # rate, temporal
         st_list = []
         record = {}
         for in_pair in input_pairs:
@@ -643,6 +643,7 @@ class si:
         tic = time.time()
         t = time.time() - tic
 
+        first_loop = 1
         # # Cycle and apply spikes as we go though time
         while t < sobj.pars['t_max']:
 
@@ -653,7 +654,9 @@ class si:
                 electrode, inst = input_pairs[0]
 
                 # Set new voltage if it isn't the same as the last voltage
-                if st.spike_train[idx] != record['electrode_%d' % (electrode)][-1][1]:
+                if first_loop==1:
+                    self.SetVoltage(electrode, st.spike_train[idx]*spike_voltage)
+                elif st.spike_train[idx] != record['electrode_%d' % (electrode)][-1][1]:
                     self.SetVoltage(electrode, st.spike_train[idx]*spike_voltage)
                 record['electrode_%d' % (electrode)].append([t, st.spike_train[idx]*spike_voltage])
 
@@ -682,7 +685,7 @@ class si:
             ts = time.time() - tic2
             for o, op in enumerate(ops):
                 t = time.time() - tic
-                Vo = self.ReadVoltageFast(op, nSamples=30)
+                Vo = self.ReadVoltageFast(op, nSamples=50)
                 record['op_%d' % (op)].append([t, Vo])
 
         #

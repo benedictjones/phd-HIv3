@@ -7,8 +7,6 @@ from mpl_toolkits import mplot3d
 import mpl_toolkits.mplot3d.axes3d as p3
 
 import numpy as np
-import sklearn.cluster as cluster
-import sklearn.metrics as met
 
 from collections import namedtuple
 
@@ -25,9 +23,9 @@ class spike_trains(object):
 
         self.pars = {}
         self.pars['encoding'] = 'temporal'
-        self.pars['t_max'] = 0.01
+        self.pars['t_max'] = 0.5
         self.pars['dt'] = self.pars['t_max']/1000
-        self.pars['t_pulse'] = self.pars['t_max']/20 # 0.001
+        self.pars['t_pulse'] = 0.01# 0.005 #self.pars['t_max']/20 # 0.001
 
 
         # external parameters if any #
@@ -77,7 +75,7 @@ class spike_trains(object):
         I = 1
         Vreset = 0
         t = 0
-        Tr = self.pars['t_max']/20  # the count for refractory duration (pause after a spike)
+        Tr = self.pars['t_pulse']/10  # the count for refractory duration (pause after a spike)
 
         Vth = ist*self.pars['t_max']*(I/C)
         V = [Vth]

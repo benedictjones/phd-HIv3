@@ -46,26 +46,29 @@ obj.ElectrodeState()
 
 input("Press Enter to start sweeps... ")
 
-for inst in [-1, -0.5, 0.5, 1]
+for inst in [-1, -0.5, -0.2, -0.1, -0.05, 0.05, 0.1, 0.2, 0.5, 1]:
 
+    print("Measuring spike train input for:", inst)
     input_pairs = [[p,inst]]
     ops = [OP]
-    record = obj.SetV_spike_train(input_pairs, ops)
+    record = obj.SetV_spike_train(input_pairs, ops, encoding='rate')
 
 
-    obj.fin()
+    
 
 
     # save data
     location = "%s/data.hdf5" % (save_dir)
     with h5py.File(location, 'a') as hdf:
 
-        G_in = hdf.create_group("Ins")
+        G = hdf.create_group("Instance_%.3f" % (inst))
+        
+        G_in = G.create_group("In")
         for in_pair in input_pairs:
             electrode, inst = in_pair
             G_in.create_dataset('electrode_%d' % (electrode), data=record['electrode_%d' % (electrode)])
 
-        G_op = hdf.create_group("Ops")
+        G_op = G.create_group("Ops")
         for op in ops:
             G_op.create_dataset('op_%d' % (op), data=record['op_%d' % (op)])
 
@@ -75,23 +78,23 @@ for inst in [-1, -0.5, 0.5, 1]
 
     fig, axs = plt.subplots(2, sharex=True)
 
-    plt.title("Responce to input instance %.3f" % (inst))
+    axs[0].set_title("Responce to input instance %.3f" % (inst))
 
     for in_pair in input_pairs:
         electrode, inst = in_pair
         zipped = record['electrode_%d' % (electrode)]
         t, st = list(zip(*zipped))
-        axs[0].plot(t, st, label="in%d" % (electrode))
+        axs[0].plot(t, st, '-x', label="in%d" % (electrode))
     axs[0].legend()
-    axs[0].ylabel('Input Voltage Spikes')
+    axs[0].set_ylabel('Input Voltage Spikes')
 
     for op in ops:
         zipped = record['op_%d' % (op)]
         t, Vo = list(zip(*zipped))
-        axs[1].plot(t, Vo, label="op%d" % (op))
+        axs[1].plot(t, Vo, '-x', label="op%d" % (op))
     axs[1].legend()
-    axs[1].xlabel('Time')
-    axs[1].ylabel('Voltage')
+    axs[1].set_xlabel('Time')
+    axs[1].set_xlabel('Voltage')
 
     fig_path = "%s/FIG_spike_responce__%s.png" % (save_dir, str(inst))
     fig.savefig(fig_path, dpi=200)
@@ -101,6 +104,6 @@ for inst in [-1, -0.5, 0.5, 1]
 plt.show()
 plt.close('all')
 
-
+obj.fin()
 
 # fin

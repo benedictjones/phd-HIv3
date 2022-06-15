@@ -32,7 +32,7 @@ print("Time Stamp:", t_string, "\n\n")
 
 p = 1
 OP =  4 # 4
-numS = 10 # 30
+numS = 50 # 30
 
 test_label = 'IO_sweep__p%s_Op%d' % (p,OP)
 #test_label = 'IO_sweep__p%s_Op%d__8_2Meg_%dFadc' % (p,OP, ADCfclk)
@@ -60,7 +60,7 @@ Vin = np.arange(-x1_max, x1_max+interval, interval)  # neg to pos
 
 #Vin = np.arange(0, 3+interval, interval)  # x1_max
 
-direction = 'random' # forward, backward, random
+direction = 'forward' # forward, backward, random
 
 if direction == 'forward' :
     Vin_sweep = np.concatenate((Vin, np.flip(Vin)))
