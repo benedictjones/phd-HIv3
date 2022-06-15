@@ -2,6 +2,7 @@ from mod_hardware.HI import hi
 import time
 import numpy as np
 import h5py
+from mod_software.spike_obj import spike_trains
 
 """ Software Interface for the EiM PCB
 For use with the Hardware Interface (HI).
@@ -332,6 +333,91 @@ class si:
 
         elif ret_type == 1:
             return np.round(vop,6), np.round(Vadc,6), np.round(bit,6)
+    #
+
+    def ReadVoltageFast(self, location, loc_scheme='output', nSamples=3, debug=0, ret_type=0):
+        """
+        Read a voltage from an electrode.
+
+        loc_scheme is used to set the type of output selection:
+            loc_scheme = 'output' (1 to 4)
+            loc_scheme = 'channel' (0 to 3)
+            loc_scheme = 'electrode' output electrode location (3, 8, 11, 16)
+
+        Three return types:
+            - "raw" returns: Vadc, Vadc_std
+            - "0"   returns: Vop
+            - "1"   returns: Vop, Vadc, raw_bit_value
+
+        Note: The hardware scales the electode voltages from [-10,10]V to
+        [0,5]V so the ADC can read them.
+        """
+
+        # # Fetch list of active ADCs (i.e., outputs)
+        # # and there electrodes + channels
+        ADC_electrode_list = []
+        ADC_channel_list = []
+        for k, v in self.electode_device.items():
+            if v[0] == 'A':
+                ADC_electrode_list.append(k)
+                ADC_channel_list.append(self.electode_channel[k])
+
+        # # Format selected input location to correct channel indexing
+        if loc_scheme == 'output':
+            if location == 1:
+                sel_ch = 0
+            elif location == 2:
+                sel_ch = 1
+            elif location == 3:
+                sel_ch = 3
+            elif location == 4:
+                sel_ch = 2
+
+            if sel_ch in ADC_channel_list:
+                the_channel = sel_ch
+            else:
+                print("Error (SI.py): Selected output not available to read from.")
+                return
+
+        elif loc_scheme == 'channel':
+            if location in ADC_channel_list:
+                the_channel = location
+            else:
+                print("Error (SI.py): Selected ADC channel not available to read from.")
+                return
+
+        elif loc_scheme == 'electrode':
+            if location in ADC_electrode_list:
+                the_channel = self.electode_channel[location]
+            else:
+                print("Error (SI.py): Selected output electrode not available to read from.")
+                return
+
+        else:
+            print("Error (SI.py): Invalide output reference scheme. Use 'output' or 'electrode'.")
+            return
+
+        #
+
+        # # Read Voltage using a "burst and average read"
+        Vadc, Vadc_std, bit, bit_std = self.hi.read_adc_Average(chip='ADC1',
+                                                                channel=the_channel,
+                                                                nAverage=nSamples,
+                                                                bDebug=0, bDebug_graph=debug)
+
+        if ret_type == 'raw':
+            return Vadc, Vadc_std
+
+        # # Scale voltage by the hardware design
+        vop = self.Scale_ADC_to_OutputV(Vadc, the_channel)
+
+        # Return
+        if ret_type == 0:
+            return np.round(vop,6)
+
+        elif ret_type == 1:
+            return np.round(vop,6), np.round(Vadc,6), np.round(bit,6)
+
 
     #
 
@@ -513,7 +599,7 @@ class si:
         Sweep up to the desired voltage from zero.
         """
 
-        
+
         interval = voltage/interval_frac
         for v in np.arange(0, voltage+interval, interval):
             Vdac = self.SetVoltage(electrode, voltage)
@@ -527,7 +613,7 @@ class si:
         """
         Set the desired voltage after zero.
         """
-        
+
         self.SetVoltage(electrode, 0)
         Vdac = self.SetVoltage(electrode, voltage)
         # self.SetVoltage(electrode, 0)
@@ -535,5 +621,80 @@ class si:
         return Vdac
 
     #
+
+    def SetV_spike_train(self, input_pairs, ops=[], spike_voltage=5):
+        """
+        Convert the inputs into a spike train.
+        """
+
+        sobj = spike_trains(encoding='rate')  # rate, temporal
+        st_list = []
+        record = {}
+        for in_pair in input_pairs:
+            electrode, inst = in_pair
+            st = sobj.encode(inst)
+            st_list.append(st)
+            record['electrode_%d' % (electrode)] = []
+
+        for op in ops:
+            record['op_%d' % (op)] = []
+
+        # # Iterate though loop
+        tic = time.time()
+        t = time.time() - tic
+
+        # # Cycle and apply spikes as we go though time
+        while t < sobj.pars['t_max']:
+
+            # # Apply spikes
+            for i, st in enumerate(st_list):
+                t = time.time() - tic
+                idx = (np.abs(np.array(st.time) - t)).argmin()
+                electrode, inst = input_pairs[0]
+
+                # Set new voltage if it isn't the same as the last voltage
+                if st.spike_train[idx] != record['electrode_%d' % (electrode)][-1][1]:
+                    self.SetVoltage(electrode, st.spike_train[idx]*spike_voltage)
+                record['electrode_%d' % (electrode)].append([t, st.spike_train[idx]*spike_voltage])
+
+            # # Read outputs
+            for o, op in enumerate(ops):
+                t = time.time() - tic
+                Vo = self.ReadVoltageFast(op)
+                record['op_%d' % (op)].append([t, Vo])
+
+        #
+
+        # # Set all to ground
+        for i, st in enumerate(st_list):
+            t = time.time() - tic
+            electrode, inst = input_pairs[0]
+            self.SetVoltage(electrode, 0)
+            record['electrode_%d' % (electrode)].append([t, 0])
+
+        #
+
+        # # Read outputs after the spike train
+        tic2 = time.time()
+        ts = time.time() - tic2
+
+        while ts < sobj.pars['t_max']:
+            ts = time.time() - tic2
+            for o, op in enumerate(ops):
+                t = time.time() - tic
+                Vo = self.ReadVoltageFast(op, nSamples=30)
+                record['op_%d' % (op)].append([t, Vo])
+
+        #
+
+        return record
+
+    #
+
+    #
+
+#
+
+#
 
 # fin
