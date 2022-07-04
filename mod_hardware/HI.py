@@ -271,7 +271,7 @@ class hi:
             rawval = (voltage / 2.048) * 4096 / self.gain
             self.set_dac_raw(chip, channel, int(rawval))
         else:
-            print ("Invalid DAC Vout value %f. Must be between 0 and %f (non-inclusive) " % (voltage, self.maxDacVoltage))
+            print("Invalid DAC Vout value %f. Must be between 0 and %f (non-inclusive) " % (voltage, self.maxDacVoltage))
 
         return
 
@@ -308,12 +308,12 @@ class hi:
         reg.bits.shutdown = 1  # Active low, i.e on => 1
 
         # # fetch pin number for selected chip
-        pin = self.CE[chip]
+        # pin = self.CE[chip]
 
         # # Write to device
-        self.set_pin(pin, 0)  # chips are active low
+        self.set_pin(self.CE[chip], 0)  # chips are active low
         self.spiDAC.xfer2( [ reg.bytes[1], reg.bytes[0] ])
-        self.set_pin(pin, 1)  # prevent further change by deactivating
+        self.set_pin(self.CE[chip], 1)  # prevent further change by deactivating
 
         return
 

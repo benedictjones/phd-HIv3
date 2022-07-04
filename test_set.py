@@ -3,6 +3,7 @@ import numpy as np
 import time
 import h5py
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 from scipy.stats import linregress
 
@@ -36,8 +37,11 @@ os.makedirs(save_dir)
 # ################################
 
 
-Vin_sweep = [-5, 0, 5]
+interval = 0.1 # 0.05, 0.025 #  DAC-QE~0.0005, ADC-QE~0.002V
+x1_max = 9 # 3.5, 3
+Vin = np.arange(-x1_max, x1_max+interval, interval)
 
+num_sets = len(Vin)
 
 Vout = []
 Iout = []
@@ -48,27 +52,29 @@ input("Press Enter to continue... ")
 
 
 
-smaple_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19, 20, 22, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100, 110, 125, 140, 150, 175, 200, 225, 250, 275, 300, 350, 400, 450, 500]
-smaple_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19, 20, 22, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100, 110, 125, 140, 150, 175, 200]
-smaple_list = np.arange(1,50,1)
-
 V_loop = []
 Std_loop = []
 
-for v in Vin_sweep:
+
+tic = time.time()
+for v in tqdm(Vin):
 
     # # Set Voltage
-    v = np.round(v,3)
-    obj.SetVoltage(electrode=p, voltage=v)
+    # v = np.round(v,3)
+    obj.SetV(electrode=p, voltage=v)
 
     # # Perform one long capture to get DeBug plot
-    obj.ReadVoltage(OP, debug=0, nSamples=20)  # ret_type = 'raw', | ch0, pin3, op1
+    # obj.ReadVoltage(OP, debug=0, nSamples=20)  # ret_type = 'raw', | ch0, pin3, op1
 
-    print("Set voltage on pin %d to %fV" % (p, v))
+    # print("Set voltage on pin %d to %fV" % (p, v))
 
     # # Repeat for a number of repetitions
-    input("Press Enter to move to next input V")
+    # input("Press Enter to move to next input V")
 
+t = time.time() - tic
+print("Time to complete %d sets = %f" % (num_sets, t))
+
+# # Vary whether the spi or set pi is active to see what is slow
 
 obj.fin()
 
@@ -78,4 +84,3 @@ obj.fin()
 #
 
 #
-

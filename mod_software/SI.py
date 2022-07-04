@@ -122,7 +122,6 @@ class si:
         # # Scale voltage according to the hardware gain
         V_dac = self.Scale_InputV_to_DAC(voltage, electrode)
         V_adc_ideal = self.Scale_ADC_to_OutputV(voltage, inverse=1)
-
         # print("Set Electrode to %fV, DAC to %fV, ideal 1:1 ADC reading:%fV" % (voltage, V_dac, V_adc_ideal))
 
         # # Error check and set new voltage
@@ -161,10 +160,8 @@ class si:
             print("Error (SI.py): Input voltage list not match the number of DAC (input) electrodes")
             return 1
         else:
-            loc = 0
-            for electrode in DAC_electrode_list:
-                self.hi.set_dac(self.electode_device[electrode], self.electode_channel[electrode], voltage_list[loc])
-                loc = loc + 1
+            for i, electrode in enumerate(DAC_electrode_list):
+                self.SetV(electrode, voltage_list[i])
 
         # # Pause operation to allow system to settle
         # time.sleep(self.RC_delay)
@@ -195,7 +192,7 @@ class si:
         else:
             I = vop/self.Rshunt
 
-        # Return
+        # # Return
         if ret_type == 0:
             return np.round(I,11), vop
 
@@ -594,29 +591,26 @@ class si:
 
     #
 
-    def sweep_Vset(self, electrode=1, voltage=0, interval_frac=5):
-        """
-        Sweep up to the desired voltage from zero.
-        """
+    def SetV(self, electrode, voltage=0, type='normal'):
 
-
-        interval = voltage/interval_frac
-        for v in np.arange(0, voltage+interval, interval):
+        if type == 'normal':
+            '''Set the desired voltage. '''
             Vdac = self.SetVoltage(electrode, voltage)
-        # self.SetVoltage(electrode, 0)
 
-        return Vdac
+        elif type == 'zeroed':
+            '''Set the desired voltage after setting to zero volts. '''
+            self.SetVoltage(electrode, 0)
+            Vdac = self.SetVoltage(electrode, voltage)
 
-    #
+        elif type == 'sweepto':
+            '''Sweep up to the desired voltage from zero. '''
+            interval_frac = 5
+            interval = voltage/interval_frac
+            for v in np.arange(0, voltage+interval, interval):
+                Vdac = self.SetVoltage(electrode, voltage)
 
-    def zeroed_Vset(self, electrode=1, voltage=0):
-        """
-        Set the desired voltage after zero.
-        """
-
-        self.SetVoltage(electrode, 0)
-        Vdac = self.SetVoltage(electrode, voltage)
-        # self.SetVoltage(electrode, 0)
+        else:
+            raise ValueError("Type selected (%s) is not available." % (type))
 
         return Vdac
 
@@ -685,7 +679,7 @@ class si:
             ts = time.time() - tic2
             for o, op in enumerate(ops):
                 t = time.time() - tic
-                Vo = self.ReadVoltageFast(op, nSamples=50)
+                Vo = self.ReadVoltageFast(op, nSamples=10)
                 record['op_%d' % (op)].append([t, Vo])
 
         #

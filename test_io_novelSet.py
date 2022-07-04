@@ -27,8 +27,8 @@ print("Date:", d_string)
 t_string = now.strftime("%H_%M_%S")
 print("Time Stamp:", t_string, "\n\n")
 
-types = 'sweep_to'
-#types = 'zeroed_set'
+types = 'sweepto'
+#types = 'zeroed'
 
 p = 1
 OP = 4 # 4
@@ -61,7 +61,7 @@ elif direction == 'backward' :
     Vin_sweep = np.concatenate((np.flip(Vin), Vin))
 elif direction == 'random':
     Vin_sweep = np.random.uniform(-x1_max, x1_max, 800)
-    
+
 elif direction == 'forward_single':
     Vin_sweep = Vin
 elif direction == 'backward_single':
@@ -108,10 +108,8 @@ for sweep in range(num_sweeps):
         v = np.round(v,3)
 
         # Vdac = obj.SetVoltage(electrode=p, voltage=v)
-        if types == 'sweep_to':
-            Vdac = obj.sweep_Vset(electrode=p, voltage=v, interval_frac=5)
-        elif types == 'zeroed_set':
-            Vdac = obj.zeroed_Vset(electrode=p, voltage=v)
+        Vdac = obj.SetV(electrode=p, voltage=v, type=types)
+
 
 
 
