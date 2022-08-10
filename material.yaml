@@ -1,0 +1,16 @@
+network:
+
+  # # Define the properties of the defualt material neuron
+  model : Physical # Physical, Pks, LDs
+  num_input : 3 # 4
+  num_output : 4 # 6
+  num_config : 2
+  num_nodes : default # 18 # default  # 'default' = sum of above, or int
+
+
+spice:
+  Vmin : -9.5  # -5
+  Vmax : 9.5  # 5
+
+
+ # fin
