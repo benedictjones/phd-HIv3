@@ -15,7 +15,7 @@ spice:
 
   op_shunt_R : 470
 
-  in_pins : [1]
-  out_pins : [4]
-  num_samples : 30
+  in_pins : [1,9,2]
+  out_pins : [2,3,4]
+  num_samples : 3
  # fin

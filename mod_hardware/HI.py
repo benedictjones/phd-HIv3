@@ -113,7 +113,8 @@ class hi:
             else:
                 raise ValueError("ADC speed is outside of allowed values (50000<Fclk<2000000)")
 
-        print("inside hit:", self.__adcrefvoltage)
+        #print("inside hit:", self.__adcrefvoltage)
+        
         # # Assign chip enable (CE) GPIO pins
         self.CE = {}
 
@@ -340,7 +341,7 @@ class hi:
 
         # # check to see if value is already in that state
         if self.MUX_Value[mux] == value:
-            print("Switch is already at set state i.e., MUX %s at %d" % (mux, value))
+            # print("Switch is already at set state i.e., MUX %s at %d" % (mux, value))
             return 1
 
         # # check to see at least 1 mux is has output selected

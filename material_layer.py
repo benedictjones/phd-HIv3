@@ -34,7 +34,7 @@ class PiM_processor(object):
         Takes a layers input voltages, re-organises and solves using
         material model.
         """
-        # tic = time.time()
+        tic = time.time()
 
         if np.max(lVdata) > self.prm['spice']['Vmax']:
             raise ValueError("A data input voltage (%.2f) exceeds the max allowed input voltage (%.2f)" % (np.max(lVdata), self.prm['spice']['Vmax']))
@@ -44,13 +44,14 @@ class PiM_processor(object):
 
         # # Check passed in voltage to calc
         if np.shape(lVdata)[1] != self.prm['network']['num_input']*self.prm['network']['hiddenSize']:
-            raise ValueError("Data voltage array with %d columns cannot be passed into material layer expecting %d cols." % (len(lVdata), self.prm['network']['num_input']*self.prm['network']['hiddenSize']))
+            raise ValueError("Data voltage array with %d columns cannot be passed into material layer expecting %d cols." % (np.shape(lVdata)[1], self.prm['network']['num_input']*self.prm['network']['hiddenSize']))
 
         # # Check passed in config voltages
         if len(lVc) != self.prm['network']['num_config']*self.prm['network']['hiddenSize']:
             raise ValueError("Config voltage array of %d cannot be passed into material with %d voltage application nodes." % (len(lVc), self.prm['network']['num_config']*self.prm['network']['hiddenSize']))
 
         #
+        print(np.shape(lVdata), np.shape(lVc))
 
         # # Calc Output From each material in layer
         Vout = []
@@ -81,7 +82,7 @@ class PiM_processor(object):
             raise ValueError("Output voltage array with %d columns should have %d cols." % (np.shape(Vout)[1], (self.prm['network']['num_output']*self.prm['network']['hiddenSize'])))
 
 
-        #print("Time to solve layer = ", time.time()-tic)
+        print("Time to solve layer = ", time.time()-tic)
         #exit()
 
         return Vout

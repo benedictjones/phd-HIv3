@@ -16,9 +16,9 @@ def LoadMetaData(dir, param_file=''):
 def LoadMaterialMeta(type):
 
     if 'SiM' in type:
-        file = 'mod_SiM/material.yaml'
+        raise ValueError("No sim available")
     elif 'PiM' in type:
-        file = 'mod_PiM/material.yaml'
+        file = 'material.yaml'
 
     #
 

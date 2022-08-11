@@ -6,7 +6,7 @@ from mod_software.SI import si
 
 class Material(object):
 
-    def __init__(self, prm, syst, l=0, n=0):
+    def __init__(self, prm, syst=0, l=0, n=0):
         """
         Initialise object
         """
@@ -37,7 +37,7 @@ class Material(object):
         """
         Checks input voltage, then computes output voltage using PySpice model.
         """
-        # tic = time.time()
+        tic = time.time()
 
         # # Check passed in voltage to calc
         if np.shape(Vin)[1] != (self.prm['network']['num_input'] + self.prm['network']['num_config']):
@@ -50,7 +50,7 @@ class Material(object):
         if np.shape(Vout)[1] != self.prm['network']['num_output']:
             raise ValueError("Voltage array length %d cannot be passed into material with %d voltage application nodes." % (len(Vin), (self.prm['network']['num_input'] + self.prm['network']['num_config'])))
 
-        # print("  Time to solve material = ", time.time()-tic)
+        print("  Time to solve material = ", time.time()-tic)
 
         return Vout
     #

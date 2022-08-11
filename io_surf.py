@@ -15,8 +15,9 @@ import os
 from datetime import datetime
 
 
-ADCfclk = 1000000 # 2000000
-obj = si(Rshunt=100000, ADCspeed=ADCfclk)  # 14000 , 47000
+ADCfclk = 2000000 # 2000000
+Rsh = 470 # 100000, 470 # 14000 , 47000
+obj = si(Rshunt=Rsh, ADCspeed=ADCfclk)  
 
 Rshunt = obj.Rshunt
 num_sweeps = 1
@@ -52,7 +53,7 @@ os.makedirs(save_dir)
 # ################################
 
 
-interval = 0.1 # 0.25 # 0.05 #  DAC-QE~0.0005, ADC-QE~0.002V
+interval = 0.5 # 0.25 # 0.05 #  DAC-QE~0.0005, ADC-QE~0.002V
 x1_max = 9  # 3.5, 3
 Vin = np.arange(-x1_max, x1_max+interval, interval)  # x1_max
 #Vin = np.arange(0, 3+interval, interval)  # x1_max
