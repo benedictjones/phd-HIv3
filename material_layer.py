@@ -5,16 +5,12 @@ import os
 import h5py
 import sys
 import yaml
-
 from random import random
-from multiprocessing import Pool
-from functools import partial
 
-from collections import namedtuple
-from mod_material.material import Material
+from material import Material
 
 
-class SiM_processor(object):
+class PiM_processor(object):
 
     def __init__(self, prm):
         """
@@ -69,7 +65,7 @@ class SiM_processor(object):
             idxe = m*self.prm['network']['num_config']+self.prm['network']['num_config']
             Vc = lVc[idxs:idxe]
             Vc = np.full((len(Vdata), len(Vc)), Vc)
-            
+
             Vin = np.concatenate((Vdata, Vc), axis=1)
             Vo = self.mobj.solve_material(Vin)
 
@@ -92,6 +88,15 @@ class SiM_processor(object):
 
     #
 
+    def fin(self):
+        """
+        Delete material layer object by shutting down SI and HI+GPIO connections
+        """
+        self.mobj.fin()
+        del self.mobj
+        print("Material object delected, re-initialise Material Layer to start up again.")
+
+        return
 
     #
 

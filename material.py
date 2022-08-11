@@ -1,14 +1,7 @@
 # # Top Matter
 import numpy as np
 import time
-
-from collections import namedtuple
-
-
-from mod_material.spice.GenerateRN import generate_random_netork
-from mod_material.spice.Network_Run import Run_circuit_model
-from mod_methods.FetchPerm import IndexPerm
-
+from mod_software.SI import si
 
 
 class Material(object):
@@ -23,25 +16,20 @@ class Material(object):
         self.l = l
         self.n = n
 
-        self.mstring = None
+        # # Run some checks
+        if len(self.prm['spice']['in_pins']) != (self.prm['network']['num_input']+self.prm['network']['num_config']):
+            raise ValueError("Number of input voltage pins %d does not match number input network nodes %d" % (len(self.prm['spice']['in_pins']), (self.prm['network']['num_input']+self.prm['network']['num_config'])))
+        elif len(self.prm['spice']['out_pins']) != self.prm['network']['num_output']:
+            raise ValueError("Number of output voltage pins %d does not match number output network nodes %d" % (len(self.prm['spice']['out_pins']), self.prm['network']['num_output']))
 
-        self.gen_system(syst)
+
+        self.SI = si(Rshunt=self.prm['spice']['op_shunt_R'])
 
         return
 
     #
 
     #
-
-    def gen_system(self, syst):
-        """
-        Generate Material
-        """
-
-        # # Genertate a material (if it is not Neuromorphic!!)
-        self.mstring, self.description = generate_random_netork(self.prm, syst, self.l, self.n)
-
-        return
 
     #
 
@@ -49,29 +37,14 @@ class Material(object):
         """
         Checks input voltage, then computes output voltage using PySpice model.
         """
+        # tic = time.time()
 
         # # Check passed in voltage to calc
         if np.shape(Vin)[1] != (self.prm['network']['num_input'] + self.prm['network']['num_config']):
             raise ValueError("Voltage array length %d cannot be passed into material with %d voltage application nodes." % (len(Vin), (self.prm['network']['num_input'] + self.prm['network']['num_config'])))
 
-        #
-
-        # # Calculate the voltage output of input training data
-        for attempt in [1,2,3]:
-            try:
-                # l,m = layer-index, material-in-layer-index
-                Vout = Run_circuit_model(Vin, self.mstring, self.prm)
-                break
-            except Exception as e:
-                time.sleep(np.random.rand()/10)
-                print("Attempt", attempt, "failed... \n Re trying to calculate output voltages.")
-                if attempt == 3:
-                    print("Error (solve_material, Run_circuit_model): Failed to calculate output voltages\n\n")
-                    raise ValueError(e)
-                else:
-                    pass
-
-        #
+        # # Calc Outputs
+        Vout = self.calc(Vin)
 
         # # Check output voltage
         if np.shape(Vout)[1] != self.prm['network']['num_output']:
@@ -80,9 +53,37 @@ class Material(object):
         # print("  Time to solve material = ", time.time()-tic)
 
         return Vout
-
     #
 
+    def calc(self, Vin_all):
+        """
+        Perfom loop to set and read all the voltages on the physical system
+        """
+
+        Vop_all = np.zeros((len(Vin_all), len(self.prm['spice']['out_pins'])))
+        for row, Vins in enumerate(Vin_all):
+
+            # # Set Voltages
+            for i in range(len(self.prm['spice']['in_pins'])):
+                self.SI.SetVoltage(electrode=self.prm['spice']['in_pins'][i], voltage=Vins[i])
+
+            # # Read Outputs
+            for col, OP in enumerate(self.prm['spice']['out_pins']):
+                Iop, Vop, Vadc, adc_bit_value = self.SI.ReadIV(OP, ret_type=1, nSamples=self.prm['spice']['num_samples'])
+                Vop_all[row, col] = Vop
+
+        return Vop_all
+    #
+
+    def fin(self):
+        """
+        Delete material object by shutting down SI and HI+GPIO connections
+        """
+        self.SI.fin()
+        del self.SI
+        print("SI object delected, re-initialise Material to start up again.")
+
+        return
 #
 
 #
