@@ -313,8 +313,8 @@ class si:
                 #av_bit_std = (np.sum(np.array(bit_stds)**2))**0.5
                 #print("\n Sucess!! Attempt %d Read voltage failed std quantisation noise check... (bit std=%.4f)" % (attempt, av_bit_std))
             else:
-                av_bit_std = (np.sum(np.array(bit_stds)**2))**0.5
-                print("\n  Attempt %d Read voltage failed std quantisation noise check... (bit std=%.4f)" % (attempt, av_bit_std))
+                # av_bit_std = (np.sum(np.array(bit_stds)**2))**0.5
+                # print("\n  Attempt %d Read voltage failed std quantisation noise check... (bit std=%.4f)" % (attempt, av_bit_std))
                 pass
                 #print(" > std of ADC output = ", Vstd)
             #"""
