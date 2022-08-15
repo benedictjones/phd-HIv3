@@ -114,7 +114,7 @@ class hi:
                 raise ValueError("ADC speed is outside of allowed values (50000<Fclk<2000000)")
 
         #print("inside hit:", self.__adcrefvoltage)
-        
+
         # # Assign chip enable (CE) GPIO pins
         self.CE = {}
 
@@ -216,7 +216,7 @@ class hi:
 
     #
 
-    def read_adc_Average(self, chip='ADC1', channel=0, nAverage=30, bDebug=0, bDebug_graph=0, mode=0):
+    def read_adc_Average(self, chip='ADC1', channel=0, nAverage=30, bDebug=0, bDebug_graph=0, mode=0, timings=0):
         """
         Read a series/burst of ADC values, average and return.
         """
@@ -235,25 +235,29 @@ class hi:
         rawMean = np.mean(raw_list)
         rawStd = np.std(raw_list)
 
-        toc = time.time()
+        t_total = time.time()-tic
 
         if bDebug:
             sample_rate = len(raw_list)/t_list[-1]
-            print('nAverage = %d, mean value = %.3f, total run time = %f, sample rate ~ %f' % (nAverage, fMean, toc-tic, sample_rate))
+            print('nAverage = %d, mean value = %.3f, total run time = %f, sample rate ~ %f' % (nAverage, fMean, t_total, sample_rate))
 
         if bDebug_graph == 1:
             fig_debug = plt.figure()
             sample_rate = len(raw_list)/t_list[-1]
             plt.plot(t_list, v_list)
-            plt.title('nAverage = %d, mean value = %.3f, std= %f \n total run time = %f, sample rate ~ %f' % (nAverage, fMean, fstd, toc-tic, sample_rate))
+            plt.title('nAverage = %d, mean value = %.3f, std= %f \n total run time = %f, sample rate ~ %f' % (nAverage, fMean, fstd, t_total, sample_rate))
             if not os.path.exists('Results/Debug'):
                 os.makedirs('Results/Debug')
             fig_debug.savefig('Results/Debug/read_adc_Average.png', dpi=300)
             # plt.show()
             plt.close(fig_debug)
 
-        return fMean, fstd, rawMean, rawStd
-
+        if timings == 0:
+            return fMean, fstd, rawMean, rawStd
+        else:
+            t_av_sample = t_list/len(t_list)
+            t_burst = t_list[-1]
+            return fMean, fstd, rawMean, rawStd, t_total, t_av_sample, t_burst
     #
 
     def set_dac(self, chip, channel, voltage):
@@ -270,11 +274,11 @@ class hi:
 
         if (voltage >= 0.0) and (voltage < self.maxDacVoltage):
             rawval = (voltage / 2.048) * 4096 / self.gain
-            self.set_dac_raw(chip, channel, int(rawval))
+            t_spi, t_gpio = self.set_dac_raw(chip, channel, int(rawval))
         else:
             print("Invalid DAC Vout value %f. Must be between 0 and %f (non-inclusive) " % (voltage, self.maxDacVoltage))
 
-        return
+        return t_spi, t_gpio
 
     #
 
@@ -312,11 +316,13 @@ class hi:
         # pin = self.CE[chip]
 
         # # Write to device
-        self.set_pin(self.CE[chip], 0)  # chips are active low
+        t1 = self.set_pin(self.CE[chip], 0)  # chips are active low
+        tic = time.time()
         self.spiDAC.xfer2( [ reg.bytes[1], reg.bytes[0] ])
-        self.set_pin(self.CE[chip], 1)  # prevent further change by deactivating
+        t_spi = time.time() - tic
+        t2 = self.set_pin(self.CE[chip], 1)  # prevent further change by deactivating
 
-        return
+        return t_spi, t1+t2
 
     #
 
@@ -374,6 +380,7 @@ class hi:
         """
         Set a GPIO fin logic level
         """
+        tic = time.time()
         # only allow activated pins to be set
         if (pin in self.CE.values()) or (pin in self.MUX.values()):
             #print("pin", pin, "is going to", level)
@@ -384,10 +391,9 @@ class hi:
             else:
                 print("level must be 0 (LOW) or 1 (HIGH)")
         else:
-            print('Invalid GPIO pin selected')
-            return 1
+            raise ValueError('Invalid GPIO pin selected')
 
-        return 0
+        return time.time()-tic
 
     #
 

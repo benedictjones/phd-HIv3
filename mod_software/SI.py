@@ -20,7 +20,7 @@ class si:
     # Initialise Object Variables
     RC_delay = 0  # a delay added to allow the voltages to settle
     initi_done = 0
-    
+
     # # Use offset which can be found by calibrating
     # # When Calibrating, perdorm Calibrate_DACs, then Calibrate_ADCs
     input_v_offset = 0  # y = mx + c voltage offset at input electrodes (used when scaling)
@@ -73,7 +73,7 @@ class si:
         """
         Inititalise the Software Interface (SI) object.
         """
-        
+
         # # Load in Input (DAC) Offset Arrays from previous Calibration
         if self.input_v_offset == 1:
             with h5py.File("mod_software/calibrate_data.hdf5", 'r') as hdf:
@@ -103,19 +103,20 @@ class si:
         for elec in self.electode_device:
             if 'DAC' in self.electode_device[elec]:
                 self.SetVoltage(electrode=elec, voltage=0)
-        
+
         self.initi_done = 1
-        
+
         return
 
     #
 
-    def SetVoltage(self, electrode=1, voltage=0):
+    def SetVoltage(self, electrode=1, voltage=0, timings=0):
         """
         Set a voltage on an electrode (this is scaled by the hardware design).
 
         Note: The hardware scales the DAC voltage [0,2]V to [-10,10]V.
         """
+        tic = time.time()
 
         # # Check that the selected electode is a DAC (i.e., an input)
         if self.electode_device[electrode][0] != 'D':
@@ -139,11 +140,15 @@ class si:
             print('  > Post HI Scaling Voltage cannot be less than %fV' % (self.Scale_InputV_to_DAC(0, inverse=1)))
             return 1
         else:
-            self.hi.set_dac(self.electode_device[electrode], self.electode_channel[electrode], V_dac)
+            t_spi, t_gpio = self.hi.set_dac(self.electode_device[electrode], self.electode_channel[electrode], V_dac)
+
 
         # time.sleep(0.05)
-
-        return V_dac
+        if timings == 0:
+            return V_dac
+        else:
+            t_total = time.time() - tic
+            return V_dac, t_spi, t_gpio, t_total
 
     #
 
@@ -295,12 +300,12 @@ class si:
             else:
                 print("attempt %d Read voltage failed coefficient of variation check..." % (attempt))
             #"""
-            
+
             Vadcs.append(Vadc)
             Vadc_stds.append(Vadc_std)
             bits.append(bit)
             bit_stds.append(bit_std)
-            
+
             # # just break
             #break
 
@@ -329,7 +334,7 @@ class si:
                 #self.fin()
                 #return
 
-        # # Average from the attempt loops 
+        # # Average from the attempt loops
         Vadc = np.mean(np.array(Vadcs))
         Vadc_std = (np.sum(np.array(Vadc_std)**2))**0.5
         bit = np.mean(np.array(bit))
@@ -352,9 +357,12 @@ class si:
 
         elif ret_type == 1:
             return np.round(vop,6), np.round(Vadc,6), np.round(bit,6)
+
     #
 
-    def ReadVoltageFast(self, location, loc_scheme='output', nSamples=3, debug=0, ret_type=0):
+    #
+
+    def ReadVoltageFast(self, location, loc_scheme='output', nSamples=3, debug=0, ret_type=0, timings=0):
         """
         Read a voltage from an electrode.
 
@@ -371,6 +379,7 @@ class si:
         Note: The hardware scales the electode voltages from [-10,10]V to
         [0,5]V so the ADC can read them.
         """
+        tic = time.time()
 
         # # Fetch list of active ADCs (i.e., outputs)
         # # and there electrodes + channels
@@ -419,10 +428,14 @@ class si:
         #
 
         # # Read Voltage using a "burst and average read"
-        Vadc, Vadc_std, bit, bit_std = self.hi.read_adc_Average(chip='ADC1',
-                                                                channel=the_channel,
-                                                                nAverage=nSamples,
-                                                                bDebug=0, bDebug_graph=debug)
+        if timings == 0:
+            Vadc, Vadc_std, bit, bit_std = self.hi.read_adc_Average(chip='ADC1', channel=the_channel,
+                                                                nAverage=nSamples, bDebug=0,
+                                                                bDebug_graph=debug, timings=0)
+        else:
+            Vadc, Vadc_std, bit, bit_std, t_total, t_av_sample, t_burst = self.hi.read_adc_Average(chip='ADC1', channel=the_channel,
+                                                                                                nAverage=nSamples, bDebug=0,
+                                                                                                bDebug_graph=debug, timings=1)
 
         if ret_type == 'raw':
             return Vadc, Vadc_std
@@ -431,12 +444,21 @@ class si:
         vop = self.Scale_ADC_to_OutputV(Vadc, the_channel)
 
         # Return
+        t_total_all = time.time() - tic
         if ret_type == 0:
-            return np.round(vop,6)
+            if timings == 0:
+                return np.round(vop,6)
+            else:
+                return np.round(vop,6), t_total_all, t_av_sample, t_burst
 
         elif ret_type == 1:
-            return np.round(vop,6), np.round(Vadc,6), np.round(bit,6)
+            if timings == 0:
+                return np.round(vop,6), np.round(Vadc,6), np.round(bit,6)
+            else:
+                return np.round(vop,6), np.round(Vadc,6), np.round(bit,6), t_total_all, t_av_sample, t_burst
 
+
+    #
 
     #
 

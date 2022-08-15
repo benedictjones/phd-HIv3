@@ -78,7 +78,7 @@ class mcp3204():
 
 
         #GPIO.output(CE, 0)  # Set CE low
-        v_raw = self._read_raw_(bus_data)
+        v_raw = self._read_raw_(bus_data)  # using dedicated SPI CE pin now
         #GPIO.output(CE, 1)  # Set CE high
 
         return v_raw
