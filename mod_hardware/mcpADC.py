@@ -5,32 +5,37 @@ import copy
 
 class mcp3204():
 
-    def __init__(self, spiADC, CE_dict, vref):
+    def __init__(self, spiADC, CE_dict, vref, pig=None):
         self.spiADC = spiADC
         self.channelCount = 4
         self.vref = vref
         self.resolution = 12
         self.MSB_MASK = 2**(self.resolution-8) - 1
         self.CE = CE_dict
-
+        
+        self.pig = pig
+        
         return
 
     #
 
-    def Read(self, bus_data, channel=0, diff=0):
+    def Read(self, channel=0, diff=0, timings=0):
         """
         Perform a single read.
         """
-
+        tic = time.time()
+        
         # Format data
         bus_data = self._FormatData_(channel, diff)
         #CE = self.CE[chip]   # CE use is depriciated now SPI CE (pin 24) in use
 
         # read data
-        v_raw = self._read_(CE, bus_data)
+        v_raw = self._read_(bus_data)
 
-        return v_raw
-
+        if timings==0:
+            return v_raw
+        else:
+            return v_raw, time.time()-tic
     #
 
     def Read_burst(self, channel=0, n=1, diff=0, tref='na'):
@@ -53,8 +58,8 @@ class mcp3204():
         # # read data in a loop
         # Include format data in the loop
         for i in range(n):
-            #bus_data = self._FormatData_(channel, diff)  # must include in the loop
-            cbus_data = copy.deepcopy(bus_data)
+            cbus_data = self._FormatData_(channel, diff)  # must include in the loop
+            #cbus_data = copy.deepcopy(bus_data)
             v_raw_list.append(self._read_(cbus_data))  # copy.deepcopy(bus_data)
             time_list.append(time.time()-tref)
             # time.sleep(0.0001)
@@ -92,7 +97,14 @@ class mcp3204():
         """
 
         # Read data
-        r = self.spiADC.xfer(bus_data)  # or us r = self.xfer2(data) ?
+        if self.pig is None:
+            r = self.spiADC.xfer(bus_data)  # or us r = self.xfer2(data) ?
+            #print('spi:', r)
+
+        else:
+            c, r = self.pig.spi_xfer(self.spiADC, bus_data)
+            #print('pigpio:', r)    
+                
 
         return ((r[1] & self.MSB_MASK) << 8) | r[2]
 

@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import RPi.GPIO as GPIO # using RPi.GPIO
 import spidev
+import pigpio
 import ctypes
 import time
 import os
@@ -67,17 +68,19 @@ class hi:
     # # Clock speed > 10kHz,
     # # f_clk = 20*f_sample
     # # t_sample ~ 1.5 clocks
+    ''' 
     spiADC = spidev.SpiDev()
     spiADC.open(0, 0)  # using CE0!!!
     # spiADC.speed = 900000
     spiADC.max_speed_hz = (2000000)  # 1000000, 2000000
-
-
+    # '''
+    
+    
     # # DAC (MCP4822) - Define SPI bus and init
     spiDAC = spidev.SpiDev()
     spiDAC.open(0, 1)  # not using CE1!!!
     spiDAC.no_cs = True  # Set the "SPI_NO_CS" flag to disable use of the chip select
-    spiDAC.max_speed_hz = (4000000)
+    spiDAC.max_speed_hz = (10000000)  # max 20MHz
 
     # Max DAC output voltage. Depends on gain factor
     # The following table is in the form <gain factor>:<max voltage>
@@ -106,13 +109,39 @@ class hi:
             self.gain = gainFactor
             self.maxDacVoltage = self.__dacMaxOutput__[self.gain]
 
-        # # Set ADC spi clock speed
-        if adc_speed is not None:
-            if adc_speed <= 2000000 and adc_speed >= 50000:
-                self.spiADC.max_speed_hz = adc_speed
-            else:
-                raise ValueError("ADC speed is outside of allowed values (50000<Fclk<2000000)")
 
+        self.adc_sel = 'spidev' # pigpio, spidev
+        if 'pigpio' in self.adc_sel:
+            # # may need to run: sudo pigpiod
+            # # check this with: sudo ss -lntup | grep 8888
+    
+            self.pig = pigpio.pi()
+            #pig.stop()
+            #exit()
+            self.spiADC = self.pig.spi_open(0, 2000000, 0)
+            print(self.spiADC)
+        
+            '''
+            if not self.pig.connected():
+                print("pigpio not connected!")
+                exit(0)
+            # '''
+        elif 'spidev' in self.adc_sel:
+            
+            self.spiADC = spidev.SpiDev()
+            self.spiADC.open(0, 0)  # using CE0!!!
+            # spiADC.speed = 900000
+            self.spiADC.max_speed_hz = (2000000)  # 1000000, 2000000
+            self.pig = None
+            
+            '''# # Set ADC spi clock speed
+            if adc_speed is not None:
+                if adc_speed <= 2000000 and adc_speed >= 50000:
+                    self.spiADC.max_speed_hz = adc_speed
+                else:
+                    raise ValueError("ADC speed is outside of allowed values (50000<Fclk<2000000)")
+            # '''
+        
         #print("inside hit:", self.__adcrefvoltage)
 
         # # Assign chip enable (CE) GPIO pins
@@ -158,7 +187,7 @@ class hi:
 
 
         # # Produce MCP3204 object
-        self.mcp_adc = mcp3204(self.spiADC, self.CE, vref=self.__adcrefvoltage)
+        self.mcp_adc = mcp3204(self.spiADC, self.CE, vref=self.__adcrefvoltage, pig=self.pig)
 
         # # Set all chip enable (CE) pins high
         for chip in self.CE:
@@ -176,43 +205,57 @@ class hi:
                 self.set_dac(chip, 1, 1)
                 self.set_dac(chip, 2, 1)
 
+        #self.fin()
+        #exit()
+
         return
 
     #
 
-    def read_adc(self, chip='ADC1', channel=0, mode=0, return_raw=0):
+    def read_adc(self, chip='ADC1', channel=0, mode=0, return_raw=0, timings=0):
         """
         Read a voltage value from one of the 4 channels.
         """
-
-        raw = self.mcp_adc.Read(chip=chip, channel=channel, diff=mode)
+        tic = time.time()
+        
+        raw, t_sample = self.mcp_adc.Read(channel=channel, diff=mode, timings=1)
         voltage = (self.__adcrefvoltage/4096)*raw
 
-        if return_raw == 0:
-            return voltage
-        elif return_raw == 1:
-            return voltage, raw
+        if timings == 0:
+            if return_raw == 0:
+                return voltage
+            elif return_raw == 1:
+                return voltage, raw
+            else:
+                raise ValueError("Return Raw argumnet must be 0 or 1.")
         else:
-            raise ValueError("Return Raw argumnet must be 0 or 1.")
-
+            
+            if return_raw == 0:
+                return voltage, time.time()-tic, t_sample
+            elif return_raw == 1:
+                return voltage, raw, time.time()-tic, t_sample
+            else:
+                raise ValueError("Return Raw argumnet must be 0 or 1.")
     #
 
-    def read_adc_raw(self, chip='ADC1', channel=0, mode=0):
+    def read_adc_raw(self, chip='ADC1', channel=0, mode=0, timings=0):
         """
         Read the raw binary voltage value from one of 4 channels.
         """
 
-        # # Check if it is an activated chip and a ADC
+        
+        '''# # Check if it is an activated chip and a ADC
         if chip not in self.CE:
             print("Invalid chip selected")
             return
         elif chip[0] != 'A':
             print("Chip must be an ADC")
             return
+        '''
 
-        voltage_raw = self.mcp_adc.Read(chip=chip, channel=channel, diff=mode)
+        voltage_raw, t_sample = self.mcp_adc.Read(channel=channel, diff=mode, timings=1)
 
-        return voltage_raw
+        return voltage_raw, t_sample
 
     #
 
@@ -255,9 +298,56 @@ class hi:
         if timings == 0:
             return fMean, fstd, rawMean, rawStd
         else:
-            t_av_sample = t_list/len(t_list)
             t_burst = t_list[-1]
+            t_av_sample = t_burst/len(t_list)
             return fMean, fstd, rawMean, rawStd, t_total, t_av_sample, t_burst
+    #
+    
+
+    def read_adc_Average2(self, chip='ADC1', channel=0, nAverage=30, bDebug=0, mode=0, timings=0):
+        """
+        Read a series/burst of ADC values, average and return.
+        """
+
+        Vop_mean = 0
+        Bit_mean = 0
+        t_av_sample = 0
+        tic = time.time()
+
+        if nAverage == 1:
+            rawMean, t_av_sample = self.mcp_adc.Read(channel=channel, diff=mode, timings=1)
+            fMean = (self.__adcrefvoltage/4096)*rawMean 
+            
+        else:
+            for i in range(nAverage):
+                raw, t_sample = self.mcp_adc.Read(channel=channel, diff=mode, timings=1)
+                Vop_mean += (self.__adcrefvoltage/4096)*raw
+                Bit_mean += raw
+                t_av_sample += t_sample
+            
+            fMean = Vop_mean/nAverage
+            rawMean = Bit_mean/nAverage
+        
+        t_burst = time.time()-tic
+        t_av_sample = t_av_sample/nAverage
+        t_total = time.time()-tic
+
+        if bDebug:
+            sample_rate = len(raw_list)/t_list[-1]
+            print('nAverage = %d, mean value = %.3f, total run time = %f, sample rate ~ %f' % (nAverage, fMean, t_total, sample_rate))
+
+
+        if timings == 0:
+            return fMean, rawMean,
+        else:
+            
+            return fMean, rawMean, t_total, t_av_sample, t_burst
+    #
+    
+    #
+    
+    #
+    
     #
 
     def set_dac(self, chip, channel, voltage):
@@ -270,7 +360,7 @@ class hi:
         # print("Voltage to be set on DAC:", voltage, ", Chip:", chip, ", channel:", channel)
 
         if ((channel > 2) or (channel < 1)):
-            print ("DAC channel needs to be 1 (A) or 2 (B)")
+            raise ValueError("DAC channel needs to be 1 (A) or 2 (B)")
 
         if (voltage >= 0.0) and (voltage < self.maxDacVoltage):
             rawval = (voltage / 2.048) * 4096 / self.gain
@@ -291,8 +381,8 @@ class hi:
         """
 
         if (value < 0.0) or (value > 4095):
-            print('Error (HI.py): raw DAC input was too large')
-            return
+            raise ValueError('Raw DAC input was too large')
+            
 
         # # Check if it is an activated chip and a DAC
         if chip not in self.CE:
@@ -418,15 +508,21 @@ class hi:
 
         # # Close spi conns
         if self.spiADC is not None:
-            self.spiADC.close
+            if self.pig is None:
+                self.spiADC.close
+            else:
+                self.pig.spi_close(self.spiADC)
             self.spiADC = None
+            
         if self.spiDAC is not None:
             self.spiDAC.close
             self.spiDAC = None
 
         # # Clean up GPIO
         GPIO.cleanup()
-
+        if self.pig is not None:
+            self.pig.stop()
+        
         # # Exit Message
         print("HI is now shut down via the R-Pi connection.")
 

@@ -1,0 +1,57 @@
+RPi.GPIO v0.7.1
+spidev 3.5
+Following code improvments:
+ - stopped using np.mean and np.std during looped sampling
+ - Stopped rounding output v
+
+
+>> Total Time = 6.675089 <<
+
+Total DAC Time = 0.277588 (0.042 p of total) 
+  - DAC SPI  Time = 0.153877 (0.023 p of total) 
+  - DAC GPIO Time = 0.025167 (0.004 p of total) 
+
+Total ADC Time = 6.344105 (0.950 p of total) 
+Using 30 bust sample groups
+  - ADC capture function Time  = 6.292704 (0.942715 p of total) 
+  - ADC Reading Time  = 6.288496 (0.942 p of total) 
+  - ADC AvSample Time = 0.000064 (0.000 p of total), est time sampling ~ 5.760197, rate: 15624.466474
+
+Total Other Time = 0.207549 (0.031 p of total) 
+  - DAC other Time = 0.098544 (0.015 p of total) 
+  - ADC other Time = 0.055610 (0.008 p of total) 
+  - Other other Time = 0.053396 (0.008 p of total) 
+
+Time to do all 1000 readings = 6.675089
+  - Instance [3 set]/[3 read] average time = 0.006669
+  - Instance [3 set]/[3 read] average rate = 149.952865
+  - Instance [3 set]/[3 read] average DAC time = 0.000278
+  - Instance [3 set]/[3 read] average ADC time = 0.006344
+
+
+
+
+
+
+>> Total Time = 1.060310 <<
+
+Total DAC Time = 0.277625 (0.262 p of total) 
+  - DAC SPI  Time = 0.166896 (0.157 p of total) 
+  - DAC GPIO Time = 0.023347 (0.022 p of total) 
+
+Total ADC Time = 0.740895 (0.699 p of total) 
+Using 3 bust sample groups
+  - ADC capture function Time  = 0.696926 (0.657286 p of total) 
+  - ADC Reading Time  = 0.693048 (0.654 p of total) 
+  - ADC AvSample Time = 0.000070 (0.000 p of total), est time sampling ~ 0.632116, rate: 14237.901998
+
+Total Other Time = 0.177019 (0.167 p of total) 
+  - DAC other Time = 0.087381 (0.082 p of total) 
+  - ADC other Time = 0.047847 (0.045 p of total) 
+  - Other other Time = 0.041790 (0.039 p of total) 
+
+Time to do all 1000 readings = 1.060310
+  - Instance [3 set]/[3 read] average time = 0.001056
+  - Instance [3 set]/[3 read] average rate = 946.923096
+  - Instance [3 set]/[3 read] average DAC time = 0.000278
+  - Instance [3 set]/[3 read] average ADC time = 0.000741

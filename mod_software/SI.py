@@ -125,7 +125,7 @@ class si:
 
         # # Scale voltage according to the hardware gain
         V_dac = self.Scale_InputV_to_DAC(voltage, electrode)
-        V_adc_ideal = self.Scale_ADC_to_OutputV(voltage, inverse=1)
+        # V_adc_ideal = self.Scale_ADC_to_OutputV(voltage, inverse=1)
         # print("Set Electrode to %fV, DAC to %fV, ideal 1:1 ADC reading:%fV" % (voltage, V_dac, V_adc_ideal))
 
         # # Error check and set new voltage
@@ -150,6 +150,31 @@ class si:
             t_total = time.time() - tic
             return V_dac, t_spi, t_gpio, t_total
 
+    #
+
+    def SetVoltages(self, DACs, voltages):
+        """
+        Set all Voltages using a passed in list.
+        """
+
+        # # Fetch a list of all the electrodes assigned to DACs (i.e., inputs)
+        DAC_electrode_list = []
+        for k, v in self.electode_device.items():
+            if v[0] == 'D':
+                DAC_electrode_list.append(k)
+
+        # # Error Check and appy voltages
+        if len(voltage_list) != len(DAC_electrode_list):
+            print("Error (SI.py): Input voltage list not match the number of DAC (input) electrodes")
+            return 1
+        else:
+            for i, electrode in enumerate(DAC_electrode_list):
+                self.SetV(electrode, voltage_list[i])
+
+        # # Pause operation to allow system to settle
+        # time.sleep(self.RC_delay)
+
+        return 0
     #
 
     def SetAllVoltages(self, voltage_list):
@@ -202,10 +227,10 @@ class si:
 
         # # Return
         if ret_type == 0:
-            return np.round(I,11), vop
+            return I, vop
 
         elif ret_type == 1:
-            return np.round(I,11), vop, v_adc, bit_adc
+            return I, vop, v_adc, bit_adc
 
 
     #
@@ -429,16 +454,11 @@ class si:
 
         # # Read Voltage using a "burst and average read"
         if timings == 0:
-            Vadc, Vadc_std, bit, bit_std = self.hi.read_adc_Average(chip='ADC1', channel=the_channel,
-                                                                nAverage=nSamples, bDebug=0,
-                                                                bDebug_graph=debug, timings=0)
+            Vadc, bit = self.hi.read_adc_Average2(chip='ADC1', channel=the_channel,
+                                                                nAverage=nSamples, bDebug=0,timings=0)
         else:
-            Vadc, Vadc_std, bit, bit_std, t_total, t_av_sample, t_burst = self.hi.read_adc_Average(chip='ADC1', channel=the_channel,
-                                                                                                nAverage=nSamples, bDebug=0,
-                                                                                                bDebug_graph=debug, timings=1)
-
-        if ret_type == 'raw':
-            return Vadc, Vadc_std
+            Vadc, bit, t_total, t_av_sample, t_burst = self.hi.read_adc_Average2(chip='ADC1', channel=the_channel,
+                                                                                                nAverage=nSamples, bDebug=0, timings=1)
 
         # # Scale voltage by the hardware design
         vop = self.Scale_ADC_to_OutputV(Vadc, the_channel)
@@ -447,16 +467,92 @@ class si:
         t_total_all = time.time() - tic
         if ret_type == 0:
             if timings == 0:
-                return np.round(vop,6)
+                return vop
             else:
-                return np.round(vop,6), t_total_all, t_av_sample, t_burst
+                return vop, t_total_all, t_total, t_av_sample, t_burst
 
         elif ret_type == 1:
             if timings == 0:
-                return np.round(vop,6), np.round(Vadc,6), np.round(bit,6)
+                return vop, Vadc, bit
             else:
-                return np.round(vop,6), np.round(Vadc,6), np.round(bit,6), t_total_all, t_av_sample, t_burst
+                return vop, Vadc, bit, t_total_all, t_total, t_av_sample, t_burst
 
+    #
+    
+    #
+    
+    #
+    
+#
+
+    def ReadVoltageFastest(self, location, loc_scheme='output', nSamples=1, timings=0):
+
+        tic = time.time()
+
+        # # Fetch list of active ADCs (i.e., outputs)
+        # # and there electrodes + channels
+        ADC_electrode_list = []
+        ADC_channel_list = []
+        for k, v in self.electode_device.items():
+            if v[0] == 'A':
+                ADC_electrode_list.append(k)
+                ADC_channel_list.append(self.electode_channel[k])
+
+        # # Format selected input location to correct channel indexing
+        if loc_scheme == 'output':
+            if location == 1:
+                sel_ch = 0
+            elif location == 2:
+                sel_ch = 1
+            elif location == 3:
+                sel_ch = 3
+            elif location == 4:
+                sel_ch = 2
+
+            if sel_ch in ADC_channel_list:
+                the_channel = sel_ch
+            else:
+                print("Error (SI.py): Selected output not available to read from.")
+                return
+
+        elif loc_scheme == 'channel':
+            if location in ADC_channel_list:
+                the_channel = location
+            else:
+                print("Error (SI.py): Selected ADC channel not available to read from.")
+                return
+
+        elif loc_scheme == 'electrode':
+            if location in ADC_electrode_list:
+                the_channel = self.electode_channel[location]
+            else:
+                print("Error (SI.py): Selected output electrode not available to read from.")
+                return
+
+        else:
+            print("Error (SI.py): Invalide output reference scheme. Use 'output' or 'electrode'.")
+            return
+
+        #
+
+        # # Read Voltage using a "burst and average read"
+        Vadc, t_total, t_sample = self.hi.read_adc(chip='ADC1', channel=the_channel, timings=1)
+
+        # # Scale voltage by the hardware design
+        vop = self.Scale_ADC_to_OutputV(Vadc, the_channel)
+
+        # Return
+        if timings == 0:
+            return vop
+        else:
+            t_total_all = time.time() - tic
+            return vop, t_total_all, t_total, t_sample
+
+
+
+    #
+    
+    #
 
     #
 
@@ -572,11 +668,10 @@ class si:
         #
 
         # # Scale using offset
-        Vref = self.hi.dacrefvoltage
         if inverse == 0:
-            V_scaled = ((V + offset)/10) + Vref   # compute required DAC voltage for set electrode voltage
+            V_scaled = ((V + offset)/10) + self.hi.dacrefvoltage   # compute required DAC voltage for set electrode voltage
         elif inverse == 1:
-            V_scaled = 10*(V - Vref) - offset  # compute electrode voltage for a set DAC voltage
+            V_scaled = 10*(V - self.hi.dacrefvoltage) - offset  # compute electrode voltage for a set DAC voltage
         else:
             raise ValueError("Invalid inverse toggle.")
 

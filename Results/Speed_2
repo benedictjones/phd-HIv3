@@ -1,0 +1,45 @@
+RPi.GPIO v0.7.1
+spidev 3.5
+
+
+>> Total Time = 8.988364 <<
+
+Total DAC Time = 0.313409 (0.034868 p of total) <<
+  - DAC SPI  Time = 0.168921 (0.018793 p of total) <<
+  - DAC GPIO Time = 0.026323 (0.002929 p of total) <<
+
+Total ADC Time = 8.460802 (0.941306 p of total) <<
+Using 30 bust sample groups
+  - ADC Reading Time  = 7.063858 (0.785889 p of total) <<
+  - ADC AvSample Time = 0.000078 (0.000009 p of total) <<
+
+Total Other Time = 1.729261 (0.192389 p of total) <<
+
+Time to do all 1000 readings = 8.988364
+  - Instance [3 set]/[3 read] average time = 0.008982
+  - Instance [3 set]/[3 read] average rate = 111.328065
+  - Instance [3 set]/[3 read] average DAC time = 0.000313
+  - Instance [3 set]/[3 read] average ADC time = 0.008461
+
+
+
+
+
+>> Total Time = 2.541908 <<
+
+Total DAC Time = 0.311394 (0.122504 p of total) <<
+  - DAC SPI  Time = 0.169232 (0.066577 p of total) <<
+  - DAC GPIO Time = 0.027046 (0.010640 p of total) <<
+
+Total ADC Time = 2.025390 (0.796799 p of total) <<
+Using 3 bust sample groups
+  - ADC Reading Time  = 0.772404 (0.303868 p of total) <<
+  - ADC AvSample Time = 0.000086 (0.000034 p of total) <<
+
+Total Other Time = 1.573226 (0.618915 p of total) <<
+
+Time to do all 1000 readings = 2.541908
+  - Instance [3 set]/[3 read] average time = 0.002537
+  - Instance [3 set]/[3 read] average rate = 394.212804
+  - Instance [3 set]/[3 read] average DAC time = 0.000311
+  - Instance [3 set]/[3 read] average ADC time = 0.002025
