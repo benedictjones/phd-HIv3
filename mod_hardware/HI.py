@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import RPi.GPIO as GPIO # using RPi.GPIO
 import spidev
-import pigpio
+# import pigpio
 import ctypes
 import time
 import os
@@ -68,13 +68,12 @@ class hi:
     # # Clock speed > 10kHz,
     # # f_clk = 20*f_sample
     # # t_sample ~ 1.5 clocks
-    ''' 
     spiADC = spidev.SpiDev()
     spiADC.open(0, 0)  # using CE0!!!
     # spiADC.speed = 900000
     spiADC.max_speed_hz = (2000000)  # 1000000, 2000000
-    # '''
-    
+
+
     
     # # DAC (MCP4822) - Define SPI bus and init
     spiDAC = spidev.SpiDev()
@@ -109,38 +108,12 @@ class hi:
             self.gain = gainFactor
             self.maxDacVoltage = self.__dacMaxOutput__[self.gain]
 
-
-        self.adc_sel = 'spidev' # pigpio, spidev
-        if 'pigpio' in self.adc_sel:
-            # # may need to run: sudo pigpiod
-            # # check this with: sudo ss -lntup | grep 8888
-    
-            self.pig = pigpio.pi()
-            #pig.stop()
-            #exit()
-            self.spiADC = self.pig.spi_open(0, 2000000, 0)
-            print(self.spiADC)
-        
-            '''
-            if not self.pig.connected():
-                print("pigpio not connected!")
-                exit(0)
-            # '''
-        elif 'spidev' in self.adc_sel:
-            
-            self.spiADC = spidev.SpiDev()
-            self.spiADC.open(0, 0)  # using CE0!!!
-            # spiADC.speed = 900000
-            self.spiADC.max_speed_hz = (2000000)  # 1000000, 2000000
-            self.pig = None
-            
-            '''# # Set ADC spi clock speed
-            if adc_speed is not None:
-                if adc_speed <= 2000000 and adc_speed >= 50000:
-                    self.spiADC.max_speed_hz = adc_speed
-                else:
-                    raise ValueError("ADC speed is outside of allowed values (50000<Fclk<2000000)")
-            # '''
+        # # Set ADC spi clock speed
+        if adc_speed is not None:
+            if adc_speed <= 2000000 and adc_speed >= 50000:
+                self.spiADC.max_speed_hz = adc_speed
+            else:
+                raise ValueError("ADC speed is outside of allowed values (50000<Fclk<2000000)")
         
         #print("inside hit:", self.__adcrefvoltage)
 
@@ -187,7 +160,7 @@ class hi:
 
 
         # # Produce MCP3204 object
-        self.mcp_adc = mcp3204(self.spiADC, self.CE, vref=self.__adcrefvoltage, pig=self.pig)
+        self.mcp_adc = mcp3204(self.spiADC, self.CE, vref=self.__adcrefvoltage)
 
         # # Set all chip enable (CE) pins high
         for chip in self.CE:
@@ -263,11 +236,14 @@ class hi:
         """
         Read a series/burst of ADC values, average and return.
         """
+        
+        # pip3 install --upgrade spidev==3.4
+
 
         v_list = []
         tic = time.time()
 
-        # # Burst reading (only requires 1 CE toggle)
+        # # Burst reading 
         raw_list, t_list = self.mcp_adc.Read_burst(channel=channel, n=nAverage, diff=mode, tref=tic)
 
         # # Format Returned voltages
@@ -294,6 +270,8 @@ class hi:
             fig_debug.savefig('Results/Debug/read_adc_Average.png', dpi=300)
             # plt.show()
             plt.close(fig_debug)
+
+        print(nAverage, ">", channel, fMean)
 
         if timings == 0:
             return fMean, fstd, rawMean, rawStd
@@ -508,10 +486,7 @@ class hi:
 
         # # Close spi conns
         if self.spiADC is not None:
-            if self.pig is None:
-                self.spiADC.close
-            else:
-                self.pig.spi_close(self.spiADC)
+            self.spiADC.close
             self.spiADC = None
             
         if self.spiDAC is not None:
@@ -520,8 +495,6 @@ class hi:
 
         # # Clean up GPIO
         GPIO.cleanup()
-        if self.pig is not None:
-            self.pig.stop()
         
         # # Exit Message
         print("HI is now shut down via the R-Pi connection.")

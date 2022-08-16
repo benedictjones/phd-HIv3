@@ -102,21 +102,21 @@ for c, Vc in enumerate(Vcs):
 
             # # Read Voltages
             for o, OP in enumerate(OPs):
-                Iop, Vop, Vadc, adc_bit_value = obj.ReadIV(OP, ret_type=1, nSamples=3)
+                Iop, Vop, Vadc, adc_bit_value = obj.ReadIV(OP, ret_type=1, nSamples=30)
                 Vo[j, i, c, o] = Vop
                 Io[j, i, c, o] = Iop
                 Bo[j, i, c, o] = adc_bit_value
 
                 pbar.set_description("Vc %.2f, V1 %.2f/ V2 %.2f | OP %d:  Vo=%.3f, Io=%s" % (Vc, Vin1, Vin2, OP, Vop, str(Iop)))
                 pbar.update(1)
+                print(OP, Vop)
 
-
-pbar.close()
-t_read = time.time()-tref
-obj.fin()
-print("Time to do all readings = %f" % (t_read))
-print("Instance set/read rate = %f" % (num_sets/t_read))
-
+    pbar.close()
+    t_read = time.time()-tref
+    obj.fin()
+    print("Time to do all readings = %f" % (t_read))
+    print("Instance set/read rate = %f" % (num_sets/t_read))
+    exit()
 
 # # Add to save dict
 for o, OP in enumerate(OPs):

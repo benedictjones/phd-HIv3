@@ -5,15 +5,13 @@ import copy
 
 class mcp3204():
 
-    def __init__(self, spiADC, CE_dict, vref, pig=None):
+    def __init__(self, spiADC, CE_dict, vref):
         self.spiADC = spiADC
         self.channelCount = 4
         self.vref = vref
         self.resolution = 12
         self.MSB_MASK = 2**(self.resolution-8) - 1
         self.CE = CE_dict
-        
-        self.pig = pig
         
         return
 
@@ -58,8 +56,8 @@ class mcp3204():
         # # read data in a loop
         # Include format data in the loop
         for i in range(n):
-            cbus_data = self._FormatData_(channel, diff)  # must include in the loop
-            #cbus_data = copy.deepcopy(bus_data)
+            #cbus_data = self._FormatData_(channel, diff)  # must include in the loop
+            cbus_data = copy.deepcopy(bus_data)
             v_raw_list.append(self._read_(cbus_data))  # copy.deepcopy(bus_data)
             time_list.append(time.time()-tref)
             # time.sleep(0.0001)
@@ -81,10 +79,7 @@ class mcp3204():
         if CE != 'CE0':
             raise ValueError("SPI interface handles the ADC chip enable!")
 
-
-        #GPIO.output(CE, 0)  # Set CE low
         v_raw = self._read_raw_(bus_data)  # using dedicated SPI CE pin now
-        #GPIO.output(CE, 1)  # Set CE high
 
         return v_raw
 
@@ -97,14 +92,7 @@ class mcp3204():
         """
 
         # Read data
-        if self.pig is None:
-            r = self.spiADC.xfer(bus_data)  # or us r = self.xfer2(data) ?
-            #print('spi:', r)
-
-        else:
-            c, r = self.pig.spi_xfer(self.spiADC, bus_data)
-            #print('pigpio:', r)    
-                
+        r = self.spiADC.xfer(bus_data)  # or us r = self.xfer2(data) ?
 
         return ((r[1] & self.MSB_MASK) << 8) | r[2]
 

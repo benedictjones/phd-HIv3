@@ -668,10 +668,11 @@ class si:
         #
 
         # # Scale using offset
+        Vref = self.hi.dacrefvoltage
         if inverse == 0:
-            V_scaled = ((V + offset)/10) + self.hi.dacrefvoltage   # compute required DAC voltage for set electrode voltage
+            V_scaled = ((V + offset)/10) + Vref   # compute required DAC voltage for set electrode voltage
         elif inverse == 1:
-            V_scaled = 10*(V - self.hi.dacrefvoltage) - offset  # compute electrode voltage for a set DAC voltage
+            V_scaled = 10*(V - Vref) - offset  # compute electrode voltage for a set DAC voltage
         else:
             raise ValueError("Invalid inverse toggle.")
 
