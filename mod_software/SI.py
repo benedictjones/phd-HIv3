@@ -217,7 +217,7 @@ class si:
             - "1"   returns: Iop, Vop, Vadc, raw_bit_value
         """
 
-        vop, v_adc, bit_adc = self.ReadVoltage(location, loc_scheme, nSamples, ret_type=1)  # ch0, pin3, op1
+        vop, v_adc, bit_adc = self.ReadVoltageFast(location, loc_scheme, nSamples, ret_type=1)  # ch0, pin3, op1
 
         # # Calc current from shunt resistance
         if self.Rshunt == 'none':

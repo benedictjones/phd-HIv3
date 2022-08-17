@@ -267,11 +267,11 @@ class hi:
             plt.title('nAverage = %d, mean value = %.3f, std= %f \n total run time = %f, sample rate ~ %f' % (nAverage, fMean, fstd, t_total, sample_rate))
             if not os.path.exists('Results/Debug'):
                 os.makedirs('Results/Debug')
-            fig_debug.savefig('Results/Debug/read_adc_Average.png', dpi=300)
+            fig_debug.savefig('Results/Debug/read_adc_Average.png', dpi=100)
             # plt.show()
             plt.close(fig_debug)
 
-        print(nAverage, ">", channel, fMean)
+        # print(nAverage, ">", channel, fMean)
 
         if timings == 0:
             return fMean, fstd, rawMean, rawStd
