@@ -281,7 +281,7 @@ class hi:
                 t_av_sample = t_burst/len(t_list)
                 return fMean, fstd, rawMean, rawStd, t_total, t_av_sample, t_burst
         else:
-            return fMean, fstd, np.array(v_list)-fMean, rawMean, rawStd, np.array(raw_list)-rawMean
+            return fMean, fstd, np.array(v_list), rawMean, rawStd, np.array(raw_list)
     #
 
 

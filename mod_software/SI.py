@@ -448,14 +448,15 @@ class si:
         #
 
         # # Read Voltage using a "burst and average read"
-        Vadc, Vadc_std, Vadc_residuals, bit, bit_std, bit_residuals = self.hi.read_adc_Average(chip='ADC1',
+        Vadc, Vadc_std, VadcS, bit, bit_std, bitS = self.hi.read_adc_Average(chip='ADC1',
                                                                                                channel=the_channel,
                                                                                                nAverage=nSamples,
                                                                                                ret_type=1)
 
+        
         # # Scale voltage by the hardware design
         vop = self.Scale_ADC_to_OutputV(Vadc, the_channel)
-        vop_residuals = self.Scale_ADC_to_OutputV(Vadc_residuals, the_channel)
+        vopS = self.Scale_ADC_to_OutputV(VadcS, the_channel)
 
         # # Calc current from shunt resistance
         if self.Rshunt == 'none':
@@ -464,7 +465,7 @@ class si:
             I = vop/self.Rshunt
 
         # Return
-        return I, vop, vop_residuals, bit, bit_residuals
+        return I, vop, vopS-vop, bit, bitS-bit
 
     #
 

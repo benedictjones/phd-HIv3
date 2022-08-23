@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 from matplotlib.colors import LinearSegmentedColormap  # allows the creation of a custom cmap
 
-from scipy.stats import linregress
+# from scipy.stats import linregress
 
 from _norm_color import MidpointNormalize
 
@@ -53,7 +53,7 @@ os.makedirs(save_dir)
 # ################################
 
 
-interval = 0.5 # 0.25 # 0.05 #  DAC-QE~0.0005, ADC-QE~0.002V
+interval = 0.5 # 0.5 # 0.25 # 0.05 #  DAC-QE~0.0005, ADC-QE~0.002V
 x1_max = 9  # 3.5, 3
 Vin = np.arange(-x1_max, x1_max+interval, interval)  # x1_max
 #Vin = np.arange(0, 3+interval, interval)  # x1_max
@@ -113,12 +113,16 @@ for c, Vc in enumerate(Vcs):
                 Io[j, i, c, o] = Iop
                 Bo[j, i, c, o] = Bop
 
-                res['residuals']['op_%d__bit' % (OP)].append(vop_residuals)
-                res['residuals']['op_%d__v' % (OP)].append(bit_residuals)
+                res['residuals']['op_%d__bit' % (OP)].append(bit_residuals)
+                res['residuals']['op_%d__v' % (OP)].append(vop_residuals) 
 
                 pbar.set_description("Vc %.2f, V1 %.2f/ V2 %.2f | OP %d:  Vo=%.3f, Io=%s" % (Vc, Vin1, Vin2, OP, Vop, str(Iop)))
                 pbar.update(1)
                 # print(OP, Vop)
+                #print("\n Vop %d R:" % (OP), Vop, vop_residuals)
+                #print("Bop %d R:" % (OP), Bop, bit_residuals)
+        #pbar.close()
+        #exit()
 
 pbar.close()
 t_read = time.time()-tref
@@ -139,9 +143,28 @@ res['lims_Io'] = [np.min(Io), np.max(Io)]
 res['lims_Bo'] = [np.min(Bo), np.max(Bo)]
 
 
+op_max = 0
+op_min = 0
+b_max = 0
+b_min = 0
 for o, OP in enumerate(OPs):
     res['residuals']['op_%d__bit' % (OP)] = np.concatenate(np.array(res['residuals']['op_%d__bit' % (OP)]))
     res['residuals']['op_%d__v' % (OP)] = np.concatenate(np.array(res['residuals']['op_%d__v' % (OP)]))
+    #print("\n Vop %d resifuals:" % (OP), res['residuals']['op_%d__v' % (OP)])
+    #print("  Max:", np.max(res['residuals']['op_%d__v' % (OP)]))
+    #print("  Min:", np.min(res['residuals']['op_%d__v' % (OP)]))
+    
+    if np.max(res['residuals']['op_%d__v' % (OP)]) >= op_max:
+        op_max = np.max(res['residuals']['op_%d__v' % (OP)])
+    
+    if np.min(res['residuals']['op_%d__v' % (OP)]) <= op_min:
+        op_min = np.min(res['residuals']['op_%d__v' % (OP)])
+    
+    if np.max(res['residuals']['op_%d__bit' % (OP)]) >= b_max:
+        b_max = np.max(res['residuals']['op_%d__bit' % (OP)])
+    
+    if np.min(res['residuals']['op_%d__bit' % (OP)]) <= b_min:
+        b_min = np.min(res['residuals']['op_%d__bit' % (OP)])
 
 #
 
@@ -215,7 +238,7 @@ cbar = fig.colorbar(im, ax=axs[:,:] , shrink=0.8, location='bottom') # ,orientat
 cbar.set_label('Vo', fontsize=10)
 
 fig_path = "%s/FIG_surf_OP.png" % (save_dir)
-fig.savefig(fig_path, dpi=300)
+fig.savefig(fig_path, dpi=200)
 plt.close(fig)
 
 plt.show()
@@ -228,23 +251,36 @@ plt.close('all')
 
 fig, axs = plt.subplots(len(OPs))
 for o, OP in enumerate(OPs):
-    axs[o].hist(res['residuals']['op_%d__bit' % (OP)])
-    axs[o].set_title("OP %d")
-    axs[o].set_xlabel('Residuals')
-    axs[o].set_ylabel('Count')
+    dat = res['residuals']['op_%d__bit' % (OP)]
+    bwidth = 0.5
+    axs[o].hist(dat, bins=np.arange(min(dat), max(dat)+bwidth, bwidth))
+    axs[o].set_ylabel("OP %d Count" % (OP))
+    
+    axs[o].set_xlim(b_min,b_max)
+    
+    if OP == OPs[-1]:
+        axs[o].set_xlabel('Bit Residuals')
+        
+        
+        
 fig_path = "%s/FIG_residuals_bit.png" % (save_dir)
-fig.savefig(fig_path, dpi=200)
+fig.savefig(fig_path, dpi=150)
 plt.close(fig)
 
 
 fig, axs = plt.subplots(len(OPs))
 for o, OP in enumerate(OPs):
-    axs[o].hist(res['residuals']['op_%d__v' % (OP)])
-    axs[o].set_title("OP %d")
-    axs[o].set_xlabel('Residuals')
-    axs[o].set_ylabel('Count')
+    dat = res['residuals']['op_%d__v' % (OP)]
+    bwidth = 0.002
+    axs[o].hist(dat, bins=np.arange(min(dat), max(dat)+bwidth, bwidth))
+    # axs[o].set_title("OP %d" % (OP))
+    axs[o].set_xlim(op_min,op_max)
+    axs[o].set_ylabel("OP %d Count" % (OP))
+    if OP == OPs[-1]:
+        axs[o].set_xlabel('Vop Residuals')
+    
 fig_path = "%s/FIG_residuals_v.png" % (save_dir)
-fig.savefig(fig_path, dpi=200)
+fig.savefig(fig_path, dpi=150)
 plt.close(fig)
 
 #
