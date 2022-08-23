@@ -17,7 +17,7 @@ from datetime import datetime
 
 ADCfclk = 2000000 # 2000000
 Rsh = 470 # 100000, 470 # 14000 , 47000
-obj = si(Rshunt=Rsh, ADCspeed=ADCfclk)  
+obj = si(Rshunt=Rsh, ADCspeed=ADCfclk)
 
 Rshunt = obj.Rshunt
 num_sweeps = 1
@@ -88,6 +88,11 @@ Vo = np.zeros((len(Vin1s), len(Vin2s), len(Vcs), len(OPs)))
 Io = np.zeros((len(Vin1s), len(Vin2s), len(Vcs), len(OPs)))
 Bo = np.zeros((len(Vin1s), len(Vin2s), len(Vcs), len(OPs)))
 
+res['residuals'] = {}
+for o, OP in enumerate(OPs):
+    res['residuals']['op_%d__bit' % (OP)] = []
+    res['residuals']['op_%d__v' % (OP)] = []
+
 for c, Vc in enumerate(Vcs):
 
     for i, Vin1 in enumerate(Vin1s):
@@ -102,10 +107,14 @@ for c, Vc in enumerate(Vcs):
 
             # # Read Voltages
             for o, OP in enumerate(OPs):
-                Iop, Vop, Vadc, adc_bit_value = obj.ReadIV(OP, ret_type=1, nSamples=1)
+                # Iop, Vop, Vadc, adc_bit_value = obj.ReadIV(OP, ret_type=1, nSamples=1)  # fast
+                Iop, Vop, vop_residuals, Bop, bit_residuals = obj.ReadVoltageResiduals(OP, nSamples=30)
                 Vo[j, i, c, o] = Vop
                 Io[j, i, c, o] = Iop
-                Bo[j, i, c, o] = adc_bit_value
+                Bo[j, i, c, o] = Bop
+
+                res['residuals']['op_%d__bit' % (OP)].append(vop_residuals)
+                res['residuals']['op_%d__v' % (OP)].append(bit_residuals)
 
                 pbar.set_description("Vc %.2f, V1 %.2f/ V2 %.2f | OP %d:  Vo=%.3f, Io=%s" % (Vc, Vin1, Vin2, OP, Vop, str(Iop)))
                 pbar.update(1)
@@ -129,15 +138,22 @@ res['lims_Vo'] = [np.min(Vo), np.max(Vo)]
 res['lims_Io'] = [np.min(Io), np.max(Io)]
 res['lims_Bo'] = [np.min(Bo), np.max(Bo)]
 
+
+for o, OP in enumerate(OPs):
+    res['residuals']['op_%d__bit' % (OP)] = np.concatenate(np.array(res['residuals']['op_%d__bit' % (OP)]))
+    res['residuals']['op_%d__v' % (OP)] = np.concatenate(np.array(res['residuals']['op_%d__v' % (OP)]))
+
 #
 
+# ######################################################
 # # save data to file
+# ######################################################
 location = "%s/data.hdf5" % (save_dir)
 with h5py.File(location, 'a') as hdf:
-    
+
     for k, v in res.items():
         #print(k)
-        
+
         if isinstance(v, dict):
             G_sub = hdf.create_group(k)
             for k2, v2 in res[k].items():
@@ -158,6 +174,10 @@ with h5py.File(location, 'a') as hdf:
 #
 
 # exit()
+
+# ######################################################
+# Plots
+# ######################################################
 
 #
 
@@ -202,6 +222,30 @@ plt.show()
 plt.close('all')
 
 #
+
+
+# # Histograms
+
+fig, axs = plt.subplots(len(OPs))
+for o, OP in enumerate(OPs):
+    axs[o].hist(res['residuals']['op_%d__bit' % (OP)])
+    axs[o].set_title("OP %d")
+    axs[o].set_xlabel('Residuals')
+    axs[o].set_ylabel('Count')
+fig_path = "%s/FIG_residuals_bit.png" % (save_dir)
+fig.savefig(fig_path, dpi=200)
+plt.close(fig)
+
+
+fig, axs = plt.subplots(len(OPs))
+for o, OP in enumerate(OPs):
+    axs[o].hist(res['residuals']['op_%d__v' % (OP)])
+    axs[o].set_title("OP %d")
+    axs[o].set_xlabel('Residuals')
+    axs[o].set_ylabel('Count')
+fig_path = "%s/FIG_residuals_v.png" % (save_dir)
+fig.savefig(fig_path, dpi=200)
+plt.close(fig)
 
 #
 

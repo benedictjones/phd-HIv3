@@ -221,7 +221,7 @@ class si:
 
         # # Calc current from shunt resistance
         if self.Rshunt == 'none':
-            I = 0
+            I = np.nan
         else:
             I = vop/self.Rshunt
 
@@ -385,6 +385,89 @@ class si:
 
     #
 
+
+    #
+
+    def ReadVoltageResiduals(self, location, loc_scheme='output', nSamples=20):
+        """
+        Read a voltage from an electrode.
+
+        loc_scheme is used to set the type of output selection:
+            loc_scheme = 'output' (1 to 4)
+            loc_scheme = 'channel' (0 to 3)
+            loc_scheme = 'electrode' output electrode location (3, 8, 11, 16)
+
+        Note: The hardware scales the electode voltages from [-10,10]V to
+        [0,5]V so the ADC can read them.
+        """
+
+        # # Fetch list of active ADCs (i.e., outputs)
+        # # and there electrodes + channels
+        ADC_electrode_list = []
+        ADC_channel_list = []
+        for k, v in self.electode_device.items():
+            if v[0] == 'A':
+                ADC_electrode_list.append(k)
+                ADC_channel_list.append(self.electode_channel[k])
+
+        # # Format selected input location to correct channel indexing
+        if loc_scheme == 'output':
+            if location == 1:
+                sel_ch = 0
+            elif location == 2:
+                sel_ch = 1
+            elif location == 3:
+                sel_ch = 3
+            elif location == 4:
+                sel_ch = 2
+
+            if sel_ch in ADC_channel_list:
+                the_channel = sel_ch
+            else:
+                print("Error (SI.py): Selected output not available to read from.")
+                return
+
+        elif loc_scheme == 'channel':
+            if location in ADC_channel_list:
+                the_channel = location
+            else:
+                print("Error (SI.py): Selected ADC channel not available to read from.")
+                return
+
+        elif loc_scheme == 'electrode':
+            if location in ADC_electrode_list:
+                the_channel = self.electode_channel[location]
+            else:
+                print("Error (SI.py): Selected output electrode not available to read from.")
+                return
+
+        else:
+            print("Error (SI.py): Invalide output reference scheme. Use 'output' or 'electrode'.")
+            return
+
+        #
+
+        # # Read Voltage using a "burst and average read"
+        Vadc, Vadc_std, Vadc_residuals, bit, bit_std, bit_residuals = self.hi.read_adc_Average(chip='ADC1',
+                                                                                               channel=the_channel,
+                                                                                               nAverage=nSamples,
+                                                                                               ret_type=1)
+
+        # # Scale voltage by the hardware design
+        vop = self.Scale_ADC_to_OutputV(Vadc, the_channel)
+        vop_residuals = self.Scale_ADC_to_OutputV(Vadc_residuals, the_channel)
+
+        # # Calc current from shunt resistance
+        if self.Rshunt == 'none':
+            I = np.nan
+        else:
+            I = vop/self.Rshunt
+
+        # Return
+        return I, vop, vop_residuals, bit, bit_residuals
+
+    #
+
     #
 
     def ReadVoltageFast(self, location, loc_scheme='output', nSamples=3, debug=0, ret_type=0, timings=0):
@@ -478,11 +561,11 @@ class si:
                 return vop, Vadc, bit, t_total_all, t_total, t_av_sample, t_burst
 
     #
-    
+
     #
-    
+
     #
-    
+
 #
 
     def ReadVoltageFastest(self, location, loc_scheme='output', nSamples=1, timings=0):
@@ -551,7 +634,7 @@ class si:
 
 
     #
-    
+
     #
 
     #
