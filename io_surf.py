@@ -53,7 +53,7 @@ os.makedirs(save_dir)
 # ################################
 
 
-interval = 0.5 # 0.5 # 0.25 # 0.05 #  DAC-QE~0.0005, ADC-QE~0.002V
+interval = 1 # 0.5 # 0.5 # 0.25 # 0.05 #  DAC-QE~0.0005, ADC-QE~0.002V
 x1_max = 9  # 3.5, 3
 Vin = np.arange(-x1_max, x1_max+interval, interval)  # x1_max
 #Vin = np.arange(0, 3+interval, interval)  # x1_max
@@ -108,7 +108,7 @@ for c, Vc in enumerate(Vcs):
             # # Read Voltages
             for o, OP in enumerate(OPs):
                 # Iop, Vop, Vadc, adc_bit_value = obj.ReadIV(OP, ret_type=1, nSamples=1)  # fast
-                Iop, Vop, vop_residuals, Bop, bit_residuals = obj.ReadVoltageResiduals(OP, nSamples=30)
+                Iop, Vop, vop_residuals, Bop, bit_residuals = obj.ReadVoltageResiduals(OP, nSamples=10)
                 Vo[j, i, c, o] = Vop
                 Io[j, i, c, o] = Iop
                 Bo[j, i, c, o] = Bop
