@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 from matplotlib.colors import LinearSegmentedColormap  # allows the creation of a custom cmap
+import matplotlib
+import cmocean  # extra perceptually uniform cmaps  https://matplotlib.org/cmocean/
 
 # from scipy.stats import linregress
 
@@ -83,16 +85,25 @@ for o, OP in enumerate(OPs):
 
 #
 
+matplotlib .rcParams['axes.linewidth'] = 1  # box edge
+#matplotlib .rcParams['mathtext.fontset'] = 'Arial'  # 'cm'
+matplotlib.rc('pdf', fonttype=42)  # embeds the font, so can import to inkscape
+matplotlib .rcParams["legend.labelspacing"] = 0.25
+
+matplotlib .rcParams['lines.linewidth'] = 0.85
+matplotlib .rcParams['lines.markersize'] = 3.5
+matplotlib .rcParams['lines.markeredgewidth'] = 0.5
 
 #
 
 minn = res['lims_Vo'][0]
 maxx = res['lims_Vo'][1]
+minn, maxx = -5,5
 print("Vlims:", minn, maxx)
 
 basic_cols = ['#009cff', '#6d55ff', '#ffffff', '#ff6d55','#ff8800']  # pastal orange/red/white/purle/blue
 my_cmap = LinearSegmentedColormap.from_list('mycmap', basic_cols)
-
+my_cmap = cmocean.cm.balance
 
 w = int(len(Vcs))*2.5
 h = int(len(OPs))*3
@@ -116,7 +127,7 @@ for o, op in enumerate(OPs):
 
 
 # fig.subplots_adjust(bottom=0.2)
-cbar = fig.colorbar(im, ax=axs[:,:] , shrink=0.8, location='bottom') # ,orientation='horizontal'
+cbar = fig.colorbar(im, ax=axs[:,:] , shrink=0.8, location='bottom', extend='both') # ,orientation='horizontal' , extend = 'both'
 cbar.set_label('Vo', fontsize=10)
 
 fig_path = "%s/FIG_surf_OP.png" % (dir)

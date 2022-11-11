@@ -73,13 +73,13 @@ for v in Vins:
     # # Read Outputs
     for col, OP in enumerate(out_pins):
         Vop, t_total_all, t_total, t_av_sample, t_burst = obj.ReadVoltageFast(OP, ret_type=0, nSamples=numS, timings=1)
-        
+
         '''###
         Vop, t_total_all, t_total, t_sample = obj.ReadVoltageFastest(OP, nSamples=1, timings=1)
         t_av_sample = t_sample
         t_burst = t_sample
         # '''
-        
+
         t_adc_total += t_total_all
         t_adc_capture_total += t_total
         t_adc_sample += t_burst
@@ -126,18 +126,18 @@ print("  - Instance [%d set]/[%d read] average ADC time = %f" % (len(in_pins), l
 tic = time.time()
 for j in range(num_v*numS):
     time.time()
-    
+
 print("\n>>Time it takes to call time.time() for %d : %f" % (num_v*numS, time.time()-tic))
 
 
 tic = time.time()
 for v in Vins:
     a = (v+10)*5
-print("Individual multiplication:", time.time()-tic) 
+print("Individual multiplication:", time.time()-tic)
 
 tic = time.time()
 a = (Vins+10)*5
-print("array multiplication:", time.time()-tic) 
+print("array multiplication:", time.time()-tic)
 
 
 # fin
