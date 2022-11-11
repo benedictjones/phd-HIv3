@@ -298,6 +298,7 @@ class hi:
         if nAverage == 1:
             rawMean, t_av_sample = self.mcp_adc.Read(channel=channel, diff=mode, timings=1)
             fMean = (self.__adcrefvoltage/4096)*rawMean
+            #fMean = rawMean
 
         else:
             for i in range(nAverage):

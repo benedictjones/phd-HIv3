@@ -39,10 +39,10 @@ obj = si(Rshunt=470, ADCspeed=ADCfclk)  # 14000 , 47000, , electrode11='in'
 
 in_pins = [1,9,2]
 out_pins = [2,3,4]
-numS = 3 # 30
+numS = 1 # 30
 
 rng = np.random.default_rng(0)
-num_v = 1000
+num_v = 10000
 s = (num_v, len(in_pins))
 Vins = rng.uniform(-5,5, size=s)
 
@@ -100,12 +100,16 @@ print("\n>> Total Time = %f <<" % (total))
 print("\nTotal DAC Time = %f (%.3f p of total) " % (t_dac_total, t_dac_total/total))
 print("  - DAC SPI  Time = %f (%.3f p of total) " % (t_dac_spi, t_dac_spi/total))
 print("  - DAC GPIO Time = %f (%.3f p of total) " % (t_dac_gpio, t_dac_gpio/total))
+print("  > Total per DAC freq = %f" % (len(in_pins)*num_v/t_dac_total))
+
 
 print("\nTotal ADC Time = %f (%.3f p of total) " % (t_adc_total, t_adc_total/total))
 print("Using %d bust sample groups" % (numS))
 print("  - ADC capture function Time  = %f (%f p of total) " % (t_adc_capture_total, t_adc_capture_total/total))
 print("  - ADC Reading Time  = %f (%.3f p of total) " % (t_adc_sample, t_adc_sample/total))
 print("  - ADC AvSample Time = %f (%.3f p of total), est time sampling ~ %f, rate: %f" % (np.mean(t_adc_per_sample), np.mean(t_adc_per_sample)/total, np.mean(t_adc_per_sample)*num_v*numS*len(out_pins), 1/np.mean(t_adc_per_sample)))
+print("  > Total per ADC channel & sample freq = %f" % (len(out_pins)*numS*num_v/t_adc_total))
+
 
 other_total = total-t_dac_spi-t_dac_gpio-t_adc_sample
 print("\nTotal Other Time = %f (%.3f p of total) " % (other_total, other_total/total))
